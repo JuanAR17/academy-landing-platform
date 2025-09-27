@@ -1,0 +1,83 @@
+.hero {
+  padding: 80px 7%;
+  height: 100vh;
+  width: 100%;
+  background: linear-gradient(135deg, #081836 0%, #113370 50%, #0458d9 100%);
+  color: #fff;
+  backdrop-filter: blur(1px);
+  overflow: hidden;
+}
+
+
+.logo {
+  width: 280px;
+  height: auto;
+  filter: drop-shadow(12px 15px 5px #051125);
+}
+
+.btn-primary{
+  width: 180px;
+}
+
+.hero-image{
+  width: 40%;
+  right: 150px;
+  mix-blend-mode: lighten;
+  filter: drop-shadow(0 0 15px #06aae5);
+}
+
+.slider-container {
+  overflow: hidden;
+  position: relative;
+}
+
+.slider-wrapper {
+  display: flex;
+  transition: transform 0.8s ease-in-out;
+}
+
+.slide-item {
+  flex-shrink: 0;
+  width: calc(33.3333% - 1rem);
+  margin-right: 1rem;
+}
+
+@media (max-width: 1023px) {
+  .slide-item {
+    width: calc(50% - 1rem);
+  }
+}
+
+@media (max-width: 767px) {
+  .slide-item {
+    width: 100%;
+    margin-right: 0;
+  }
+}
+
+.slider-btn {
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.slider-dots .dot {
+  width: 10px;
+  height: 10px;
+  background-color: #ccc;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.5s;
+}
+
+.slider-dots .dot.active {
+  background-color: #f59e0b;
+}
+
+footer {
+  text-align: center;
+  padding: 1.5rem;
+  background: #0A2540;
+  color: #F9FAFB;
+  font-size: 0.9rem;
+}

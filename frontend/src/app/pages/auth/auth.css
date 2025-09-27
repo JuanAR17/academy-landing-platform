@@ -1,0 +1,9 @@
+.background {
+  height: 100vh;
+  background: linear-gradient(135deg, #081836 0%, #113370 50%, #0458d9 100%);
+  backdrop-filter: blur(10px);
+}
+
+.card{
+  background-color: #1a1a2e7e;
+}
