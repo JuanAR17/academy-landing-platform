@@ -5,5 +5,10 @@
 }
 
 .card{
-  background-color: #1a1a2e7e;
+  width: 50%;
+  background-color: #1a1a2eab;
+}
+
+.card-body button svg{
+  color: #fff;
 }

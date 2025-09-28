@@ -1,16 +1,14 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { NgIf } from '@angular/common';           // ✅ NgIf viene de @angular/common
-
 import { LeadService, LeadPayload } from './lead.service';
 
 @Component({
   selector: 'app-root',
-  standalone: true,                               // ✅ necesario si usas "imports"
-  imports: [RouterOutlet, FormsModule, NgIf],     // ✅ ya con NgIf correcto
+  standalone: true,
+  imports: [RouterOutlet, FormsModule],
   templateUrl: './app.html',
-  styleUrls: ['./app.css']                        // (mejor plural para compatibilidad)
+  styleUrls: ['./app.css']
 })
 export class App {
   protected readonly title = signal('frontend');

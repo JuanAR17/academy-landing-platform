@@ -79,13 +79,12 @@ input:invalid:not(:placeholder-shown) + label {
   color: #ffffff;
   font-size: 1.2rem;
   font-weight: bold;
-  overflow: hidden;
-  transition: all 3s ease-in-out;
+  transition: background 0.3s;
 }
 
 .signup-button:hover {
   background: linear-gradient(90deg, #bb9c00, #FFD300);
-  transition: all 0.3s ease-in-out;
+  transition: background 0.3s;
 }
 
 .login-link {
@@ -101,6 +100,6 @@ input:invalid:not(:placeholder-shown) + label {
 }
 
 .login-link a:hover {
-  color: #8a2be2;
+  color: #FFD300;
   text-decoration: underline;
 }

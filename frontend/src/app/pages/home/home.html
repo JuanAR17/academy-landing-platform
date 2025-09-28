@@ -21,37 +21,48 @@
   </div>
 </section>
 
-<section class="mt-4 bg-white py-16 px-4 md:px-8" id="cronograma">
-  <div class="container mx-auto">
-    <h2 class="mb-4 text-4xl font-extrabold text-center mb-12 text-gray-900">Cronograma Tentativo</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <div class="bg-white rounded-xl shadow p-6 text-center border border-gray-200">
+<section class="mt-5 mb-5 bg-white px-4" id="cronograma">
+  <div class="container d-flex flex-column align-items-center">
+    <h2 class="mb-4">Cronograma Tentativo</h2>
+    <div class="d-flex bg-white shadow p-6 border">
 
-        @for(item of cronograma(); track item.id){
-          <h3 class="text-2xl font-semibold mb-2 text-gray-800">{{ item.producto }}</h3>
-          <p class="text-gray-600 font-medium text-lg mb-4">{{ item.descripcion }}</p>
+      @for(item of cronograma(); track item.id){
+        <div class="px-3 m-4" style="width: 33.33%;">
+          <h3 class="text-2xl font-semibold mb-3 text-gray-800">{{ item.producto }}</h3>
+
+          <p class="text-gray-600 font-medium text-lg ">{{ item.descripcion }}</p>
           <div class="text-sm text-gray-500">
             <p>Fecha de inicio: <span class="font-semibold text-gray-700">{{ item.fechaInicio }}</span></p>
             <p>Fecha de finalización: <span class="font-semibold text-gray-700">{{ item.fechaFin }}</span></p>
           </div>
-        }
+        </div>
 
-      </div>
+      }
+
     </div>
   </div>
 </section>
 
-<section class="mt-4 bg-white py-16 px-4 md:px-8" id="instructores">
-  <div class="container mx-auto">
-    <h2 class="mb-4 text-4xl font-extrabold text-center mb-12 text-gray-900">Nuestros Instructores</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-      <div class="bg-white rounded-xl shadow p-6 text-center border border-gray-200">
-
+<section class="instructores mt-4" >
+  <div class="instructor-background">
+    <div class="container d-flex flex-column align-items-center">
+      <h2 class="my-4" style="color: #fff;">Nuestros Instructores</h2>
+      <div class="d-flex mb-5">
         @for(instructor of instructores(); track instructor.id){
-          <img [src]="instructor.foto" [alt]="instructor.nombre" class="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-yellow-400" />
-          <h3 class="text-2xl font-semibold text-gray-800">{{ instructor.nombre }}</h3>
-          <p class="text-yellow-500 font-medium mb-2">{{ instructor.titulo }}</p>
-          <p class="text-gray-600 text-sm">{{ instructor.bio }}</p>
+          <div class="card d-flex flex-column align-items-center shadow px-3 pt-3 mx-3 text-center">
+            <img [src]="instructor.foto" [alt]="instructor.nombre" class="foto w-50 rounded-circle mb-4" />
+            <h3 class="mb-3">{{ instructor.nombre }}</h3>
+            <p class="mb-2">{{ instructor.titulo }}</p>
+            <p class="">{{ instructor.bio }}</p>
+            <div class="d-flex align-items-center mb-3">
+              <a [href]="instructor.redes.linkedin" target="_blank" class="text-white mx-2 text-decoration-none">
+              <i class="ti ti-brand-linkedin-filled" style="font-size: 30px;"></i>
+              </a>
+              <a [href]="instructor.redes.github" target="_blank" class="text-white mx-2 text-decoration-none">
+                <i class="ti ti-brand-github-filled" style="font-size: 30px;"></i>
+              </a>
+            </div>
+          </div>
         }
 
       </div>

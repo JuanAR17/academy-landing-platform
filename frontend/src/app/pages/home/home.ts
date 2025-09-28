@@ -17,9 +17,10 @@ export class Home {
   ]);
 
   instructores = signal([
-    { id: 1, nombre: 'Dr. Alejandro Vargas', titulo: 'Especialista en IA', bio: 'Doctor en Ciencias de la Computación con más de 10 años de experiencia.', foto: 'https://placehold.co/128x128/9CA3AF/FFFFFF?text=AV' },
-    { id: 2, nombre: 'Ing. Laura Gómez', titulo: 'Ingeniera de Datos', bio: 'Experta en Big Data y desarrollo de soluciones basadas en datos.', foto: 'https://placehold.co/128x128/9CA3AF/FFFFFF?text=LG' },
-    { id: 3, nombre: 'MSc. Carlos Ríos', titulo: 'Investigador en Visión Artificial', bio: 'Maestro en IA con especialidad en procesamiento de imágenes.', foto: 'https://placehold.co/128x128/9CA3AF/FFFFFF?text=CR' },
+    { id: 1, nombre: 'Dr. Alejandro Vargas', titulo: 'Especialista en IA', bio: 'Doctor en Ciencias de la Computación con más de 10 años de experiencia.', foto: 'https://placehold.co/128x128/9CA3AF/FFFFFF?text=AV', redes: {linkedin : 'https://www.linkedin.com/', github: 'https://github.com/'} },
+    { id: 2, nombre: 'Ing. Laura Gómez', titulo: 'Ingeniera de Datos', bio: 'Experta en Big Data y desarrollo de soluciones basadas en datos.', foto: 'https://placehold.co/128x128/9CA3AF/FFFFFF?text=LG', redes: {linkedin : 'https://www.linkedin.com/', github: 'https://github.com/'}},
+    { id: 3, nombre: 'MSc. Carlos Ríos', titulo: 'Investigador en Visión Artificial', bio: 'Maestro en IA con especialidad en procesamiento de imágenes.', foto: 'https://placehold.co/128x128/9CA3AF/FFFFFF?text=CR', redes: {linkedin : 'https://www.linkedin.com/', github: 'https://github.com/'}},
+    { id: 4, nombre: 'MSc. Carlos Ríos', titulo: 'Investigador en Visión Artificial', bio: 'Maestro en IA con especialidad en procesamiento de imágenes.', foto: 'https://placehold.co/128x128/9CA3AF/FFFFFF?text=CR', redes: {linkedin : 'https://www.linkedin.com/', github: 'https://github.com/'}},
   ]);
 
   faqs = signal([

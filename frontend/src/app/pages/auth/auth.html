@@ -1,7 +1,10 @@
 <div class="background d-flex justify-content-center align-items-center ">
   <app-star-background></app-star-background>
-  <div class="card d-flex justify-content-center align-items-center w-50 text-white">
-    <div class="card-body w-100">
+  <div class="card d-flex justify-content-center align-items-center text-white">
+    <div class="card-body w-100 relative">
+      <button class="btn btn-primary position-absolute top-0 end-0 m-3" [routerLink]="['/home']">
+        <i class="ti ti-home" style="font-size: 40px;"></i>
+      </button>
       <router-outlet></router-outlet>
     </div>
   </div>
