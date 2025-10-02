@@ -1,11 +1,16 @@
 import { Component, signal } from '@angular/core';
 import { NavBar } from '../../shared/components/nav-bar/nav-bar';
-import { RouterLink } from '@angular/router';
 import { StarBackground } from '../../shared/components/star-background/star-background';
+import { CommonModule } from '@angular/common';
+import { DiplomadoMasterclass } from "./diplomado-masterclass/diplomado-masterclass";
+import { InitialInformation } from "./initial-information/initial-information";
+import { Instructors } from "./instructors/instructors";
+import { Fqs } from "./fqs/fqs";
+import { Partners } from "./partners/partners";
 
 @Component({
   selector: 'app-home',
-  imports: [NavBar, RouterLink, StarBackground],
+  imports: [NavBar, StarBackground, CommonModule, DiplomadoMasterclass, InitialInformation, Instructors, Fqs, Partners],
   templateUrl: './home.html',
   styleUrl: './home.css'
 })
@@ -40,7 +45,7 @@ export class Home {
   ]);
 
   colaboradores = signal([
-    { nombre: 'Google', logo: 'https://cdn-icons-png.flaticon.com/512/300/300221.png' },
+    { nombre: 'RadonSoft', logo: '' },
     { nombre: 'Microsoft', logo: 'https://cdn-icons-png.flaticon.com/512/732/732249.png' },
     { nombre: 'IBM', logo: 'https://cdn-icons-png.flaticon.com/512/732/732228.png' },
     { nombre: 'NVIDIA', logo: 'https://cdn-icons-png.flaticon.com/512/732/732252.png' },
@@ -120,5 +125,6 @@ export class Home {
       this.currentIndex.set(index);
     }
   }
+
 
 }

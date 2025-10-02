@@ -1,0 +1,23 @@
+.container-question {
+  border: 2px solid #d8d8d8;
+  overflow: hidden;
+  transition: max-height ease 0.5s, border ease-in 0.3s, background-color ease-in 0.3s;
+  border-radius: 30px;
+  cursor: pointer;
+}
+
+.initial-container-question {
+  max-height: 2.7em;
+}
+
+.final-container-question {
+  max-height: 500px;
+}
+
+.initial-container-question:hover {
+  border: 2px solid #633a91;
+  background-color: #8057ae;
+  color: #fff;
+  overflow: hidden;
+  transition: all ease-in 0.3s;
+}

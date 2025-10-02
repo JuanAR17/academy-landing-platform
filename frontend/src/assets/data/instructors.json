@@ -1,0 +1,46 @@
+[
+    {
+        "id": 1,
+        "name": "Dr. Alejandro Vargas",
+        "title": "Especialista en IA",
+        "bio": "Doctor en Ciencias de la Computación con más de 10 años de experiencia.",
+        "photo": "https://placehold.co/128x128/9CA3AF/FFFFFF?text=AV",
+        "social": {
+            "linkedin": "https://www.linkedin.com/",
+            "github": "https://github.com/"
+        }
+    },
+    {
+        "id": 2,
+        "name": "Ing. Laura Gómez",
+        "title": "Ingeniera de Datos",
+        "bio": "Experta en Big Data y desarrollo de soluciones basadas en datos.",
+        "photo": "https://placehold.co/128x128/9CA3AF/FFFFFF?text=LG",
+        "social": {
+            "linkedin": "https://www.linkedin.com/",
+            "github": "https://github.com/"
+        }
+    },
+    {
+        "id": 3,
+        "name": "MSc. Carlos Ríos",
+        "title": "Investigador en Visión Artificial",
+        "bio": "Maestro en IA con especialidad en procesamiento de imágenes.",
+        "photo": "https://placehold.co/128x128/9CA3AF/FFFFFF?text=CR",
+        "social": {
+            "linkedin": "https://www.linkedin.com/",
+            "github": "https://github.com/"
+        }
+    },
+    {
+        "id": 4,
+        "name": "MSc. Carlos Ríos",
+        "title": "Investigador en Visión Artificial",
+        "bio": "Maestro en IA con especialidad en procesamiento de imágenes.",
+        "photo": "https://placehold.co/128x128/9CA3AF/FFFFFF?text=CR",
+        "social": {
+            "linkedin": "https://www.linkedin.com/",
+            "github": "https://github.com/"
+        }
+    }
+]

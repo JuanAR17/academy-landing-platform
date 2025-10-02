@@ -1,0 +1,22 @@
+.instructor-background {
+  background: linear-gradient(135deg, #071530 0%, #0B2149 50%, #071530 100%);
+  position: absolute;
+  overflow: hidden;
+  height: 85%;
+}
+
+.instructor-background svg{
+    width: 100vw;
+    height: auto;
+}
+
+.card{
+  border: 2px solid #0458d9;
+  width: 25%;
+  background-color: #05173d6c;
+  color: #fff;
+}
+
+.foto{
+  border: 3px solid #FFD300;
+}

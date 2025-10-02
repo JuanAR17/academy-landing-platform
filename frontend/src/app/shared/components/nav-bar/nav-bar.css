@@ -1,37 +1,51 @@
-.nav-links{
-  list-style: none;
+nav {
+    padding: 0 100px;
+    background: transparent;
+    transition: background-size 0.5s ease-in-out, padding 0.4s ease-in-out;
+    background-image: linear-gradient(135deg, #081836 0%, #113370 50%, #0458d9 100%);
+    background-size: 0% 100%;
+    background-position: 50% 0;
+    background-repeat: no-repeat;
 }
 
-.nav-links a {
+.nav-links a{
+  display: flex;
   text-decoration: none;
-  color: #ffffff;
-  font-size: 0.95rem;
+  color: white;
   font-weight: 500;
-  transition: ease-in-out 0.3s;
-  align-self: center;
+  padding: 1.5rem 1rem ;
+  transition: ease-in-out 0.4s;
 }
 
-.nav-links a:hover,
-.nav-links .active-link {
-  color: #ffd300;
-  cursor: pointer;
-  font-size: 1.05rem;
-  font-weight: 600;
-  transition: ease-in-out 0.3s;
+.nav-links a:hover{
+  background-color: #ffd300;
+  color: #091A38;
+  transition: ease-in-out 0.4s;
 }
 
+.nav-links a p{
+  margin: 0;
+}
 
 .btn-primary {
   width: 180px;
 }
 
-nav{
-  padding: 20px 100px;
-  transition: ease-in-out 0.3s;
+.scrolled {
+  background: linear-gradient(135deg, #081836 0%, #113370 50%, #0458d9 100%);
+  transition: ease-in-out 0.4s;
+  background-size: 100% 100%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  background-repeat: no-repeat;
 }
 
-.scrolled {
-  padding: 10px 100px;
-  background: linear-gradient(135deg, #081836 0%, #113370 50%, #0458d9 100%);
-  transition: ease-in-out 0.3s;
+.scrolled .nav-links a{
+  padding: 1rem;
+  transition: ease-in-out 0.4s;
+}
+
+.scrolled .nav-links a:hover{
+  background-color: #ffd300;
+  color: #091A38;
+  transition: ease-in-out 0.4s;
 }

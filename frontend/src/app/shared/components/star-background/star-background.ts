@@ -17,7 +17,7 @@ export class StarBackground implements OnInit {
       c.width = window.innerWidth;
       c.height = window.innerHeight;
 
-      const STAR_COUNT = 300;
+      const STAR_COUNT = 250;
       const stars: Star[] = [];
 
       function initStars() {

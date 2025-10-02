@@ -3,105 +3,32 @@
 </header>
 
 <section class="hero">
-  <app-star-background ></app-star-background>
-  <div class="relative">
-    <aside class="d-flex flex-column align-items-center text-center text-white w-50 mt-5">
-      <img src="icons/logoBlancoAmarillo.png" alt="AcademIA Logo" class="logo mb-3"/>
-      <div>
-        <p>
-          Impulsa tu futuro con formación en IA y aprende a crear soluciones inteligentes aplicadas a proyectos reales. <br> <br>
-          <span class="font-bold" style="color: #ffd300;">¡Inscríbete hoy y transforma tu carrera!</span>
-        </p>
-        <button class="btn-primary mt-2 p-2 align-self-center" [routerLink]="['/signup']">Regístrate ahora</button>
-      </div>
 
-    </aside>
-    <img class="position-absolute bottom-0 hero-image" src="img/img29.png" alt="AI Illustration" />
-
+  <div >
+    <app-initial-information></app-initial-information>
   </div>
+
+  <app-star-background ></app-star-background>
+
 </section>
 
 <section class="mt-5 mb-5 bg-white px-4" id="cronograma">
-  <div class="container d-flex flex-column align-items-center">
-    <h2 class="mb-4">Cronograma Tentativo</h2>
-    <div class="d-flex bg-white shadow p-6 border">
-
-      @for(item of cronograma(); track item.id){
-        <div class="px-3 m-4" style="width: 33.33%;">
-          <h3 class="text-2xl font-semibold mb-3 text-gray-800">{{ item.producto }}</h3>
-
-          <p class="text-gray-600 font-medium text-lg ">{{ item.descripcion }}</p>
-          <div class="text-sm text-gray-500">
-            <p>Fecha de inicio: <span class="font-semibold text-gray-700">{{ item.fechaInicio }}</span></p>
-            <p>Fecha de finalización: <span class="font-semibold text-gray-700">{{ item.fechaFin }}</span></p>
-          </div>
-        </div>
-
-      }
-
-    </div>
-  </div>
+  <app-diplomado-masterclass></app-diplomado-masterclass>
 </section>
 
-<section class="instructores mt-4" >
-  <div class="instructor-background">
-    <div class="container d-flex flex-column align-items-center">
-      <h2 class="my-4" style="color: #fff;">Nuestros Instructores</h2>
-      <div class="d-flex mb-5">
-        @for(instructor of instructores(); track instructor.id){
-          <div class="card d-flex flex-column align-items-center shadow px-3 pt-3 mx-3 text-center">
-            <img [src]="instructor.foto" [alt]="instructor.nombre" class="foto w-50 rounded-circle mb-4" />
-            <h3 class="mb-3">{{ instructor.nombre }}</h3>
-            <p class="mb-2">{{ instructor.titulo }}</p>
-            <p class="">{{ instructor.bio }}</p>
-            <div class="d-flex align-items-center mb-3">
-              <a [href]="instructor.redes.linkedin" target="_blank" class="text-white mx-2 text-decoration-none">
-              <i class="ti ti-brand-linkedin-filled" style="font-size: 30px;"></i>
-              </a>
-              <a [href]="instructor.redes.github" target="_blank" class="text-white mx-2 text-decoration-none">
-                <i class="ti ti-brand-github-filled" style="font-size: 30px;"></i>
-              </a>
-            </div>
-          </div>
-        }
 
-      </div>
-    </div>
-  </div>
+<section class="my-4 w-100" >
+  <app-instructors></app-instructors>
 </section>
 
-<section class="mt-4 bg-white py-16 px-4 md:px-8" id="faq">
+<section class="mt-4" id="faq">
+  <app-fqs></app-fqs>
+</section>
+
+<section class="mt-4 bg-white" id="testimonios">
   <div class="container mx-auto">
-    <h2 class="mb-4 text-4xl font-extrabold text-center mb-12 text-gray-900">Preguntas Frecuentes</h2>
-    <div class="space-y-6 max-w-3xl mx-auto">
-      <div class="bg-white  p-6 ">
-
-        @for(faq of faqs(); track faq.id){
-          <details class="group">
-            <summary class="flex justify-between items-center cursor-pointer text-lg font-semibold text-gray-800">
-              {{ faq.pregunta }}
-              <span class="transform transition-transform duration-300 group-open:rotate-180">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" style="width: 20px; height: 20px;">
-                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-              </span>
-            </summary>
-
-            <div class="mt-2 mb-4 px-4 text-gray-600">
-              {{ faq.respuesta }}
-            </div>
-          </details>
-        }
-
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="mt-4 bg-white py-16 px-4 md:px-8" id="testimonios">
-  <div class="container mx-auto">
-    <h2 class="mb-4 text-4xl font-extrabold text-center mb-12 text-gray-900">Testimonios de Éxito</h2>
-    <div class="relative slider-container">
+    <h2 class="mb-4 text-center">Testimonios de Éxito</h2>
+    <div class="slider-container">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 slider-wrapper">
         @for(testimonio of testimonios(); track testimonio.id){
           <div class="bg-white shadow-sm p-6 text-center border border-gray-200 slide-item">
@@ -132,22 +59,11 @@
   </div>
 </section>
 
-<section class="mt-4 bg-white py-16 px-4 md:px-8" id="colaboradores">
-  <div class="container mx-auto">
-    <h2 class="mb-4 text-4xl font-extrabold text-center mb-12 text-gray-900">Nuestros Colaboradores</h2>
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 items-center justify-center">
-      <div class="p-4 flex items-center justify-center">
-
-        @for(colaborador of colaboradores(); track colaborador){
-          <img [src]="colaborador.logo" [alt]="colaborador.nombre" class="mx-4 opacity-75 hover:opacity-100 transition-opacity duration-300" style="width: 60px;" />
-        }
-
-      </div>
-    </div>
-  </div>
+<section class="mt-5 bg-white">
+  <app-partners></app-partners>
 </section>
 
 <footer>
-  <p>&copy; 2024 AcademIA. Todos los derechos reservados.</p>
+  <p style="font-size: 14px;">&copy; 2025 AcademIA. Todos los derechos reservados.</p>
 </footer>
 

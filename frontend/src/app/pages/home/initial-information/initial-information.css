@@ -1,0 +1,21 @@
+.logo {
+  width: 250px;
+  height: auto;
+  filter: drop-shadow(12px 15px 5px #051125);
+  transition: ease-in-out 0.4s;
+}
+
+.logo:hover {
+  filter: drop-shadow(0 0 20px #06aae5);
+  transition: ease-in-out 0.4s;
+  transform: scale(1.05);
+}
+
+.btn-primary{
+  width: 180px;
+}
+
+.hero-image{
+  width: 80%;
+  filter: drop-shadow(0 0 15px #06aae5);
+}

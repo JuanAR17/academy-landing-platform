@@ -1,0 +1,22 @@
+[
+    {
+        "id": 1,
+        "question": "¿Cuáles son los requisitos para unirse a los cursos?",
+        "answer": "Nuestros cursos están diseñados para todos los niveles. Los cursos básicos no tienen requisitos previos. Para los avanzados, se recomienda tener conocimientos de programación y matemáticas."
+    },
+    {
+        "id": 2,
+        "question": "¿Los cursos son presenciales o en línea?",
+        "answer": "Todos nuestros cursos se imparten en línea para que puedas aprender desde cualquier lugar y a tu propio ritmo."
+    },
+    {
+        "id": 3,
+        "question": "¿Se emiten certificados al finalizar el curso?",
+        "answer": "Sí, al completar satisfactoriamente cada curso, recibirás un certificado oficial de AcademIA."
+    },
+    {
+        "id": 4,
+        "question": "¿Tienen soporte técnico o académico?",
+        "answer": "Sí, ofrecemos soporte 24/7 a través de nuestra plataforma y sesiones en vivo con instructores."
+    }
+]

@@ -1,0 +1,44 @@
+[
+    {
+        "id": 1,
+        "name": "Sofía Martínez",
+        "position": "Analista de Datos",
+        "comment": "AcademIA me dio las herramientas para transformar mi carrera. ¡El curso de Machine Learning es excepcional!",
+        "photo": "https://placehold.co/80x80/9CA3AF/FFFFFF?text=SM"
+    },
+    {
+        "id": 2,
+        "name": "Juan Pérez",
+        "position": "Desarrollador de Software",
+        "comment": "La calidad de los instructores y el contenido es inigualable. Pude aplicar lo aprendido a mi trabajo de inmediato.",
+        "photo": "https://placehold.co/80x80/9CA3AF/FFFFFF?text=JP"
+    },
+    {
+        "id": 3,
+        "name": "Ana López",
+        "position": "Estudiante",
+        "comment": "Gracias a AcademIA, ahora tengo una base sólida para mi futuro en el mundo de la inteligencia artificial. ¡Totalmente recomendado!",
+        "photo": "https://placehold.co/80x80/9CA3AF/FFFFFF?text=AL"
+    },
+    {
+        "id": 4,
+        "name": "Sofía Martínez",
+        "position": "Analista de Datos",
+        "comment": "AcademIA me dio las herramientas para transformar mi carrera. ¡El curso de Machine Learning es excepcional!",
+        "photo": "https://placehold.co/80x80/9CA3AF/FFFFFF?text=SM"
+    },
+    {
+        "id": 5,
+        "name": "Juan Pérez",
+        "position": "Desarrollador de Software",
+        "comment": "La calidad de los instructores y el contenido es inigualable. Pude aplicar lo aprendido a mi trabajo de inmediato.",
+        "photo": "https://placehold.co/80x80/9CA3AF/FFFFFF?text=JP"
+    },
+    {
+        "id": 6,
+        "name": "Ana López",
+        "position": "Estudiante",
+        "comment": "Gracias a AcademIA, ahora tengo una base sólida para mi futuro en el mundo de la inteligencia artificial. ¡Totalmente recomendado!",
+        "photo": "https://placehold.co/80x80/9CA3AF/FFFFFF?text=AL"
+    }
+]

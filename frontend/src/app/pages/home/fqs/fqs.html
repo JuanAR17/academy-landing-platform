@@ -1,0 +1,23 @@
+  <div class="container mx-auto">
+    <h2 class="mb-4 text-center">Preguntas Frecuentes</h2>
+
+    <div class="d-flex flex-column justify-center align-items-center">
+      @for(fq of fqs; track fq.id){
+
+        <div (click)="wrapper(fq.id)" [id]="fq.id" class="container-question w-75 mb-3"
+           [ngClass]="{'initial-container-question': wrapped !== fq.id, 'final-continer-question': wrapped === fq.id }"
+        >
+          <div class ="py-2 px-5" style="list-style: none;">
+
+            {{ fq.question }}
+            <i class="ti ti-chevron-down ms-3"></i>
+          </div>
+
+          <div class="answer mb-3 mt-2 px-4 mx-5">
+            {{ fq.answer }}
+          </div>
+        </div>
+
+      }
+    </div>
+  </div>

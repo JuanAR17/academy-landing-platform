@@ -1,22 +1,20 @@
-<nav class="w-100 position-fixed top-0 left-0 z-2" [class.scrolled]="scrolled">
+<nav class="d-flex w-100 position-fixed top-0 left-0 z-2 align-items-center justify-content-between" [class.scrolled]="scrolled">
+  <div class="nav-links d-flex align-items-center">
+    <a routerLink="/home" class="active-link">
+      <p>Inicio</p>
+    </a>
+    <a routerLink="/courses" class="active-link">
+      <p>Cursos</p>
+    </a>
+    <a routerLink="/about" class="active-link">
+      <p>Nosotros</p>
+    </a>
+    <a routerLink="/contact" class="active-link">
+      <p>Contacto</p>
+    </a>
 
-    <div class="d-flex justify-between align-items-center justify-content-between mx-5">
-      <ul class="nav-links d-flex m-0 p-0 gap-4 align-items-center">
-        <li>
-          <a routerLink="/home" routerLinkActive="active-link">Inicio</a>
-        </li>
-        <li>
-          <a routerLink="/courses" routerLinkActive="active-link">Cursos</a>
-        </li>
-        <li>
-          <a routerLink="/about" routerLinkActive="active-link">Nosotros</a>
-        </li>
-        <li>
-          <a routerLink="/contact" routerLinkActive="active-link">Contacto</a>
-        </li>
-      </ul>
+  </div>
 
-      <button class="btn-primary p-2 z-3" [routerLink]="['/signup']">Inscríbete</button>
+  <button class="btn-primary z-3 py-2" [routerLink]="['/access/signup']">Acceder</button>
 
-    </div>
 </nav>
