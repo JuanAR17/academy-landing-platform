@@ -1,0 +1,62 @@
+.card-container {
+    width: 400px;
+    height: 400px;
+    perspective: 1000px;
+}
+
+.card-tilt {
+    width: 100%;
+    height: 100%;
+    color: #fff;
+    background: linear-gradient(135deg, #113370 0%, #091A38 30%, #113370 60%, #091A38 100%);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    padding: 30px;
+    text-align: center;
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease-out;
+    transform: rotateX(0deg) rotateY(0deg);
+    border: 5px solid transparent;
+    border-radius: 5px;
+    border-image: linear-gradient(
+        to right,
+        #8B6508 0%,
+        #fded9c 25%,
+        #fded9c 50%,
+        #8B6508 75%,
+        #fded9c 100%
+    );
+    border-image-slice: 1;
+    border-image-width: 5px;
+    border-image-repeat: stretch;
+    border-image-outset: 0;
+    animation: moverBorde 4s linear infinite;
+}
+
+@keyframes moverBorde {
+    0% {
+        border-image-source: linear-gradient(
+            45deg,
+            #8B6508 0%, #fded9c 15%, #8B6508 30%, #fded9c 45%,
+            #8B6508 60%, #fded9c 75%, #8B6508 90%, #fded9c 100%
+        );
+    }
+    50% {
+         border-image-source: linear-gradient(
+            45deg,
+            #fded9c 0%, #8B6508 15%, #fded9c 30%, #8B6508 45%,
+            #fded9c 60%, #8B6508 75%, #fded9c 90%, #8B6508 100%
+        );
+    }
+    100% {
+        border-image-source: linear-gradient(
+            45deg,
+            #8B6508 0%, #fded9c 15%, #8B6508 30%, #fded9c 45%,
+            #8B6508 60%, #fded9c 75%, #8B6508 90%, #fded9c 100%
+        );
+    }
+}
+
+.card-tilt h3 {
+    margin-top: 0;
+    font-size: 24px;
+}

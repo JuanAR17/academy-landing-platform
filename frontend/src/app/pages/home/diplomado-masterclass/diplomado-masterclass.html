@@ -1,27 +1,29 @@
- <div class="container d-flex flex-column align-items-center">
-    <h2 class="mb-4">Diplomados / masterclas</h2>
-    <div class="d-flex bg-white shadow p-6 border">
+ <div class="d-flex flex-column align-items-center">
+    <h2 class="mb-4">Nuestros servicios</h2>
+    <div class="d-flex bg-white p-6">
 
-      <div class="px-3 m-4" style="width: 33.33%;">
-        <h3 class="text-2xl font-semibold mb-3 text-gray-800">Diplomado</h3>
-
-        <p class="text-gray-600 font-medium text-lg ">Lorem ipsum dolor sit amet consectetur adipisicing elit. Ad quaerat suscipit praesentium, repudiandae adipisci doloribus expedita placeat, velit eveniet delectus perferendis molestiae voluptates ipsa assumenda accusantium cum vero at iure.</p>
-
-        <div class="text-sm text-gray-500">
-          <p>Fecha de inicio: <span class="font-semibold text-gray-700">Fecha inicio</span></p>
-        </div>
-        <button class="btn-primary mt-2 p-2 align-self-center" >Regístrate ahora</button>
+      <div class="card-container">
+          <div class="card-tilt" appTiltCard [tiltStrength]="10">
+              <h3>Master class</h3>
+              <p>Pasa el mouse sobre mí para ver el efecto 3D.</p>
+              <button class="btn btn-primary">Ver más</button>
+          </div>
       </div>
 
-      <div class="px-3 m-4" style="width: 33.33%;">
-        <h3 class="text-2xl font-semibold mb-3 text-gray-800">Diplomado</h3>
+      <div class="card-container" style="margin: 0 70px;">
+          <div class="card-tilt" appTiltCard [tiltStrength]="10">
+              <h3>Diplomado</h3>
+              <p>Pasa el mouse sobre mí para ver el efecto 3D.</p>
+              <button class="btn btn-primary">Ver más</button>
+          </div>
+      </div>
 
-        <p class="text-gray-600 font-medium text-lg ">Lorem ipsum dolor sit amet consectetur adipisicing elit. Ad quaerat suscipit praesentium, repudiandae adipisci doloribus expedita placeat, velit eveniet delectus perferendis molestiae voluptates ipsa assumenda accusantium cum vero at iure.</p>
-
-        <div class="text-sm text-gray-500">
-          <p>Fecha de inicio: <span class="font-semibold text-gray-700">Fecha inicio</span></p>
-        </div>
-        <button class="btn-primary mt-2 p-2 align-self-center" >Regístrate ahora</button>
+      <div class="card-container">
+          <div class="card-tilt" appTiltCard [tiltStrength]="10">
+              <h3>Mentoría</h3>
+              <p>Pasa el mouse sobre mí para ver el efecto 3D.</p>
+              <button class="btn btn-primary">Ver más</button>
+          </div>
       </div>
 
     </div>
