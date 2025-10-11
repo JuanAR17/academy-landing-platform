@@ -1,8 +1,7 @@
 import { Routes } from '@angular/router';
 import { Home } from './pages/home/home';
 import { Auth } from './pages/auth/auth';
-import { SignUp } from './pages/auth/sign-up/sign-up';
-import { Login } from './pages/auth/login/login';
+import { SignUp } from './pages/sign-up/sign-up';
 import { Contact } from './pages/contact/contact';
 import { About } from './pages/about/about';
 import { Courses } from './pages/courses/courses';
@@ -13,18 +12,12 @@ export const routes: Routes = [
     component: Home
   },
   {
-    path: 'access',
+    path: 'login',
     component: Auth,
-    children: [
-      {
-        path: 'signup',
-        component: SignUp
-      },
-      {
-        path: 'login',
-        component: Login
-      },
-    ]
+  },
+  {
+    path: 'signup',
+    component: SignUp,
   },
   {
     path: 'courses',
