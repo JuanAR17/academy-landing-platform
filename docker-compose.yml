@@ -67,26 +67,39 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./backend-java
       dockerfile: Dockerfile
     container_name: academia-backend
     restart: unless-stopped
     environment:
-      # FastAPI / app
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}   #  viene del .env
-      UVICORN_WORKERS: "2"
-      UVICORN_PORT: "8000"
+      # DB
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      # CORS
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      # Auth (opcional)
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      REFRESH_HMAC_SECRET: ${REFRESH_HMAC_SECRET:-dev-rt-hmac}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      COOKIE_SAMESITE: ${COOKIE_SAMESITE:-Strict}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      COOKIE_PATH: /
+      ACCESS_TTL_MINUTES: 15
+      SESSION_TTL_DAYS: 60
       # nginx-proxy (vhost)
       VIRTUAL_HOST: ${BACKEND_HOST}
       LETSENCRYPT_HOST: ${BACKEND_HOST}
-      VIRTUAL_PORT: "8000"
+      VIRTUAL_PORT: "8080"
     expose:
-      - "8000"
+      - "8080"
     depends_on:
       postgres:
         condition: service_healthy
     networks: [academia-net]
+
 
   frontend:
     build:
