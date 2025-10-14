@@ -9,14 +9,18 @@ import com.academia.backend.repo.UserRepo;
 import com.academia.backend.service.AuthService;
 import com.academia.backend.service.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -26,11 +30,11 @@ public class AuthController {
   private final AuthService auth;
   private final JwtService jwt;
 
-  @Value("${refresh.hmacSecret}") String hmacSecret;
   @Value("${cookies.secure:false}") boolean cookieSecure;
   @Value("${cookies.sameSite:Strict}") String sameSite;
   @Value("${cookies.domain:}") String cookieDomain;
   @Value("${cookies.path:/}") String cookiePath;
+
   private static final String RT_COOKIE = "rt";
   private static final String CSRF_COOKIE = "csrf";
 
@@ -41,31 +45,24 @@ public class AuthController {
   @PostMapping("/login")
   @Operation(summary = "Login: crea sesión y entrega access JWT + cookies (rt, csrf)")
   public ResponseEntity<TokenOut> login(@Valid @RequestBody LoginIn in,
-                                        @RequestHeader(value="User-Agent", required=false) String ua) {
-    var user = users.findByEmail(in.email).orElseThrow(() ->
-        new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
-    if (!auth.verifyPassword(user.getPasswordHash(), in.password)) {
+                                        @RequestHeader(value="User-Agent", required=false) String ua) throws Exception {
+    UserEntity user = users.findByEmail(in.email)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
+    if (!auth.verifyPassword(user.getPasswordHash(), in.password))
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
-    }
-    String refreshPlain = auth.genRefresh();
-    // HMAC refresh (implementa con SecretKeySpec(hmacSecret))
-    byte[] rth = javax.crypto.Mac.getInstance("HmacSHA256")
-        .doFinal(refreshPlain.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-    var row = new SessionEntity();
-    row.setUserId(user.getId());
-    row.setRefreshTokenHash(rth);
-    row.setCreatedAt(Instant.now());
-    row.setExpiresAt(Instant.now().plusSeconds(60L*60*24*60)); // 60 días
-    row.setUserAgent(ua);
-    row = sessions.save(row);
 
-    String csrf = auth.genRefresh(); // token aleatorio para doble-submit
+    String refreshPlain = auth.genRandomUrlToken();
+    byte[] rth = auth.hmacRefresh(refreshPlain);
+
+    SessionEntity row = auth.newSession(user.getId(), rth, ua);
+
+    String csrf = auth.genRandomUrlToken();
     String access = jwt.mintAccess(user.getId().toString(), row.getId().toString());
     TokenOut out = new TokenOut(access, csrf);
 
     HttpHeaders headers = new HttpHeaders();
-    headers.add(HttpHeaders.SET_COOKIE, buildCookie(RT_COOKIE, refreshPlain, true));
-    headers.add(HttpHeaders.SET_COOKIE, buildCookie(CSRF_COOKIE, csrf, false));
+    headers.add(HttpHeaders.SET_COOKIE, buildCookie(RT_COOKIE, refreshPlain, true, 60L*60*24*60));
+    headers.add(HttpHeaders.SET_COOKIE, buildCookie(CSRF_COOKIE, csrf, false, 60L*60*24*60));
     return ResponseEntity.ok().headers(headers).body(out);
   }
 
@@ -74,24 +71,21 @@ public class AuthController {
   public ResponseEntity<TokenOut> refresh(HttpServletRequest req) throws Exception {
     String csrfCookie = getCookie(req, CSRF_COOKIE);
     String csrfHeader = req.getHeader("X-CSRF-Token");
-    if (csrfCookie == null || csrfHeader == null || !csrfCookie.equals(csrfHeader)) {
+    if (csrfCookie == null || csrfHeader == null || !csrfCookie.equals(csrfHeader))
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "CSRF validation failed");
-    }
+
     String rt = getCookie(req, RT_COOKIE);
     if (rt == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing refresh token");
 
-    byte[] rth = javax.crypto.Mac.getInstance("HmacSHA256")
-        .doFinal(rt.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-    var row = sessions.findByRefreshTokenHash(rth).orElseThrow(
-        () -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired session")
-    );
+    byte[] rth = auth.hmacRefresh(rt);
+    SessionEntity row = sessions.findByRefreshTokenHash(rth)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired session"));
+
     if (row.isRevoked() || row.getExpiresAt().isBefore(Instant.now()))
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired session");
 
-    String newPlain = auth.genRefresh();
-    byte[] newHash = javax.crypto.Mac.getInstance("HmacSHA256")
-        .doFinal(newPlain.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-    row.setRefreshTokenHash(newHash);
+    String newPlain = auth.genRandomUrlToken();
+    row.setRefreshTokenHash(auth.hmacRefresh(newPlain));
     row.setLastUsedAt(Instant.now());
     sessions.save(row);
 
@@ -99,7 +93,7 @@ public class AuthController {
     TokenOut out = new TokenOut(access, null);
 
     HttpHeaders headers = new HttpHeaders();
-    headers.add(HttpHeaders.SET_COOKIE, buildCookie(RT_COOKIE, newPlain, true));
+    headers.add(HttpHeaders.SET_COOKIE, buildCookie(RT_COOKIE, newPlain, true, 60L*60*24*60));
     return ResponseEntity.ok().headers(headers).body(out);
   }
 
@@ -109,23 +103,21 @@ public class AuthController {
   public void logout(HttpServletRequest req, HttpServletResponse res) throws Exception {
     String rt = getCookie(req, RT_COOKIE);
     if (rt != null) {
-      byte[] rth = javax.crypto.Mac.getInstance("HmacSHA256")
-          .doFinal(rt.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+      byte[] rth = auth.hmacRefresh(rt);
       sessions.findByRefreshTokenHash(rth).ifPresent(s -> { s.setRevoked(true); sessions.save(s); });
     }
-    clearCookie(res, RT_COOKIE);
-    clearCookie(res, CSRF_COOKIE);
+    res.addHeader(HttpHeaders.SET_COOKIE, buildCookie(RT_COOKIE, "", true, 0));
+    res.addHeader(HttpHeaders.SET_COOKIE, buildCookie(CSRF_COOKIE, "", false, 0));
   }
 
   @GetMapping("/check")
-  public Map<String, String> check() {
-    return Map.of("status", "success");
-  }
+  public java.util.Map<String, String> check() { return java.util.Map.of("status", "success"); }
 
-  // -------- helpers cookies ----------
-  private String buildCookie(String name, String value, boolean httpOnly) {
+  // ---- helpers cookies ----
+  private String buildCookie(String name, String value, boolean httpOnly, long maxAgeSeconds) {
     StringBuilder sb = new StringBuilder();
-    sb.append(name).append("=").append(value).append("; Path=").append(cookiePath).append("; Max-Age=").append(60L*60*24*60);
+    sb.append(name).append("=").append(value).append("; Path=").append(cookiePath)
+      .append("; Max-Age=").append(maxAgeSeconds);
     if (httpOnly) sb.append("; HttpOnly");
     if (cookieSecure) sb.append("; Secure");
     if (!cookieDomain.isBlank()) sb.append("; Domain=").append(cookieDomain);
@@ -133,12 +125,12 @@ public class AuthController {
     return sb.toString();
   }
   private static String getCookie(HttpServletRequest req, String name) {
-    if (req.getCookies()==null) return null;
-    for (var c : req.getCookies()) if (name.equals(c.getName())) return c.getValue();
+    jakarta.servlet.http.Cookie[] arr = req.getCookies();
+    if (arr == null) return null;
+    for (jakarta.servlet.http.Cookie c : arr) {
+      if (name.equals(c.getName())) return c.getValue();
+    }
     return null;
-  }
-  private static void clearCookie(HttpServletResponse res, String name) {
-    res.addHeader(HttpHeaders.SET_COOKIE, name+"=; Max-Age=0; Path=/; SameSite=Strict");
   }
 }
 

@@ -1,18 +1,22 @@
 server:
+  address: 0.0.0.0
   port: 8080
 
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${POSTGRES_DB:appdb}
-    username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:postgres}
+    # Usa las variables que ya tienes en docker-compose (POSTGRES_* y DB_HOST/DB_PORT)
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: validate   # usamos Flyway
+      ddl-auto: update        # crea/actualiza tablas si no existen (útil para arrancar)
     properties:
-      hibernate.jdbc.time_zone: UTC
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
 
 app:

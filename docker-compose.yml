@@ -37,7 +37,7 @@ services:
     environment:
       - DEFAULT_EMAIL=${LETSENCRYPT_EMAIL}
       - NGINX_PROXY_CONTAINER=academia-proxy  #  referencia explícita al proxy
-      # - ACME_CA_URI=https://acme-staging-v02.api.letsencrypt.org/directory  # (opcional para pruebas)
+      - ACME_CA_URI=https://acme-staging-v02.api.letsencrypt.org/directory  # (opcional para pruebas) -> Si esta linea se comenta, quiere decir que estamos en producción, caso contrario, estamos en testing
     volumes:
       - nginx.certs:/etc/nginx/certs
       - nginx.vhost.d:/etc/nginx/vhost.d
@@ -90,11 +90,13 @@ services:
       ACCESS_TTL_MINUTES: 15
       SESSION_TTL_DAYS: 60
       # nginx-proxy (vhost)
-      VIRTUAL_HOST: ${BACKEND_HOST}
-      LETSENCRYPT_HOST: ${BACKEND_HOST}
-      VIRTUAL_PORT: "8080"
-    expose:
-      - "8080"
+      #VIRTUAL_HOST: ${BACKEND_HOST}
+      #LETSENCRYPT_HOST: ${BACKEND_HOST}
+      #VIRTUAL_PORT: "8080"
+    #expose:
+      #- "8080"
+    ports:
+      - "127.0.0.1:18081:8080"   # ← solo accesible dentro del VPS
     depends_on:
       postgres:
         condition: service_healthy

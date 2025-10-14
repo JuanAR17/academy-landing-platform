@@ -5,11 +5,13 @@ import com.academia.backend.domain.UserEntity;
 import com.academia.backend.dto.TokenOut;
 import com.academia.backend.repo.SessionRepo;
 import com.academia.backend.repo.UserRepo;
-import org.springframework.beans.factory.annotation.*;
+import jakarta.servlet.http.Cookie;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import jakarta.servlet.http.Cookie;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -36,29 +38,27 @@ public class AuthService {
     this.users = users; this.sessions = sessions; this.jwt = jwt;
   }
 
-  public boolean verifyPassword(String hash, String raw) {
-    return argon.matches(raw, hash);
-  }
+  public boolean verifyPassword(String hash, String raw) { return argon.matches(raw, hash); }
 
-  // -------- refresh helpers ----------
-  public String genRefresh() {
+  public String genRandomUrlToken() {
     byte[] buf = new byte[32];
     rnd.nextBytes(buf);
     return Base64.getUrlEncoder().withoutPadding().encodeToString(buf);
   }
-  public byte[] hmacRefresh(String plain) {
-    return javax.crypto.Mac.getInstance("HmacSHA256", new org.bouncycastle.jce.provider.BouncyCastleProvider())
-        .doFinal(plain.getBytes(StandardCharsets.UTF_8)); // (Para BouncyCastle: registrar provider si hace falta)
+
+  public byte[] hmacRefresh(String plain) throws Exception {
+    Mac mac = Mac.getInstance("HmacSHA256");
+    mac.init(new SecretKeySpec(refreshSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+    return mac.doFinal(plain.getBytes(StandardCharsets.UTF_8));
   }
 
-  public javax.servlet.http.Cookie buildHttpOnlyCookie(String name, String value, long maxAgeSeconds) {
+  public Cookie buildHttpOnlyCookie(String name, String value, long maxAgeSeconds) {
     Cookie c = new Cookie(name, value);
     c.setHttpOnly(true);
     c.setSecure(cookieSecure);
     c.setPath(cookiePath);
     if (!cookieDomain.isBlank()) c.setDomain(cookieDomain);
     c.setMaxAge((int) maxAgeSeconds);
-    // SameSite no tiene API directa en Cookie; añade encabezado en controlador si necesitas estrictamente
     return c;
   }
 
@@ -67,10 +67,10 @@ public class AuthService {
     return new TokenOut(access, csrf);
   }
 
-  public SessionEntity newSession(UUID userId, String refreshHash, String ua) {
-    var s = new SessionEntity();
+  public SessionEntity newSession(UUID userId, byte[] refreshHash, String ua) {
+    SessionEntity s = new SessionEntity();
     s.setUserId(userId);
-    s.setRefreshTokenHash(refreshHash.getBytes(StandardCharsets.UTF_8)); // (o bytes verdaderos si usas Mac)
+    s.setRefreshTokenHash(refreshHash);
     s.setCreatedAt(Instant.now());
     s.setExpiresAt(Instant.now().plus(sessionTtlDays, ChronoUnit.DAYS));
     s.setUserAgent(ua);

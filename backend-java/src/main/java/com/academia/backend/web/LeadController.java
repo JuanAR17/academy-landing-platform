@@ -8,21 +8,23 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Map;
 
 @RestController
 public class LeadController {
   private final LeadRepo leads;
+  private final com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
   public LeadController(LeadRepo leads) { this.leads = leads; }
 
   @PostMapping("/ingest")
   @Operation(summary = "Guarda un Lead en Postgres")
-  public Map<String, Object> ingest(@Valid @RequestBody LeadIn in) {
-    var e = new LeadEntity();
+  public Map<String, Object> ingest(@Valid @RequestBody LeadIn in) throws Exception {
+    LeadEntity e = new LeadEntity();
     e.setTsUtc(Instant.now());
     e.setEmail(safe(in.email));
     e.setName(safe(in.name));
-    e.setCoursesJson(new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(in.courses).toString());
+    e.setCoursesJson(mapper.writeValueAsString(in.courses));
     e = leads.save(e);
     return Map.of("ok", true, "id", e.getId());
   }
@@ -30,7 +32,8 @@ public class LeadController {
   private static String safe(String s) {
     if (s == null) return "";
     s = s.replace("\0", "").replace("\r", " ").replace("\n", " ");
-    return s.startsWith("=") || s.startsWith("+") || s.startsWith("-") || s.startsWith("@") ? "'" + s : s;
+    if (s.startsWith("=") || s.startsWith("+") || s.startsWith("-") || s.startsWith("@")) return "'" + s;
+    return s;
   }
 }
 
