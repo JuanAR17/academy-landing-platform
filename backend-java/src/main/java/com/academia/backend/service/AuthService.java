@@ -38,6 +38,10 @@ public class AuthService {
     this.users = users; this.sessions = sessions; this.jwt = jwt;
   }
 
+  public String hashPassword(String raw) { 
+    return argon.encode(raw); 
+  }
+
   public boolean verifyPassword(String hash, String raw) { return argon.matches(raw, hash); }
 
   public String genRandomUrlToken() {

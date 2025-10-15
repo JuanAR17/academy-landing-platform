@@ -1,10 +1,12 @@
 package com.academia.backend.dto;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 public class LoginIn {
-  @Email public String email;
-  @NotBlank public String password;
+  @NotBlank(message = "Email o nombre de usuario requerido")
+  public String identifier; // Puede ser email o username
+  
+  @NotBlank(message = "Contraseña requerida")
+  public String password;
 }
 
