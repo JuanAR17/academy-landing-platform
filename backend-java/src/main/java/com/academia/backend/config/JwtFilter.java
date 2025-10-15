@@ -32,7 +32,12 @@ public class JwtFilter extends OncePerRequestFilter {
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
     String path = request.getRequestURI();
-    return path.startsWith("/auth/") || 
+    // Solo excluir rutas específicamente públicas
+    return path.equals("/auth/login") || 
+           path.equals("/auth/register") || 
+           path.equals("/auth/refresh") || 
+           path.equals("/auth/check") ||
+           path.equals("/auth/logout") ||
            path.startsWith("/health") || 
            path.startsWith("/ingest") ||
            path.startsWith("/v3/api-docs") || 

@@ -80,5 +80,24 @@ public class AuthService {
     s.setUserAgent(ua);
     return sessions.save(s);
   }
+
+  public void changePassword(UUID userId, String currentPassword, String newPassword) {
+    UserEntity user = users.findById(userId)
+        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    
+    // Verifica que la contraseña actual sea correcta
+    if (!verifyPassword(user.getPasswordHash(), currentPassword)) {
+      throw new RuntimeException("La contraseña actual es incorrecta");
+    }
+    
+    // Verifica que la nueva contraseña sea diferente a la actual
+    if (verifyPassword(user.getPasswordHash(), newPassword)) {
+      throw new RuntimeException("La nueva contraseña debe ser diferente a la actual");
+    }
+    
+    // Actualiza la contraseña
+    user.setPasswordHash(hashPassword(newPassword));
+    users.save(user);
+  }
 }
 
