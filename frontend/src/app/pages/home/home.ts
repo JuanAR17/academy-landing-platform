@@ -7,10 +7,11 @@ import { InitialInformation } from "./initial-information/initial-information";
 import { Instructors } from "./instructors/instructors";
 import { Fqs } from "./fqs/fqs";
 import { Partners } from "./partners/partners";
+import { Video } from "./video/video";
 
 @Component({
   selector: 'app-home',
-  imports: [NavBar, StarBackground, CommonModule, DiplomadoMasterclass, InitialInformation, Instructors, Fqs, Partners],
+  imports: [NavBar, StarBackground, CommonModule, DiplomadoMasterclass, InitialInformation, Instructors, Fqs, Partners, Video],
   templateUrl: './home.html',
   styleUrl: './home.css'
 })

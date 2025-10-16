@@ -5,13 +5,13 @@
         "url": "https://www.radonsoft.com/"
     },
     {
-        "name": "Ingenia Solutions",
-        "logo": "img/logos/Ingenia-Solutions.png",
-        "url": "https://www.ingeniasolutions.com/"
-    },
-    {
         "name": "Aseduis",
         "logo": "img/logos/logos.png",
         "url": "https://www.aseduis.com/"
+    },
+    {
+        "name": "Ingenia Solutions",
+        "logo": "img/logos/Ingenia-Solutions.png",
+        "url": "https://www.ingeniasolutions.com/"
     }
 ]

@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-fqs',
-  imports: [CommonModule],
+  imports: [CommonModule,],
   templateUrl: './fqs.html',
   styleUrl: './fqs.css'
 })

@@ -1,36 +1,30 @@
- <div class="d-flex flex-column align-items-center">
-    <h2 style="margin: 100px 0;">Nuestros servicios</h2>
-    <div class="d-flex bg-white p-6">
+ <div class="d-flex flex-column align-items-center mt-5" style="min-height: 100vh;">
+  <div class="d-flex flex-column text-center">
+    <h2 class="mt-3">Nuestros servicios</h2>
+    <p class="text-body-secondary my-2">Programas especializados para impulsar tu carrera en el campo de la inteligencia artificial.</p>
+  </div>  
 
-      <div class="card-container">
-          <div class="card-tilt" appTiltCard [tiltStrength]="10">
-                <h3>MASTER CLASS</h3>
-                <p>Un día 100% práctico para pasar de “sé qué es la IA” a “ya la estoy usando”. Aprenderás a pedirle bien a los modelos (prompting), construirás tu primer agente no-code conectado a datos y optimizarás un proceso real de oficina. Te llevas un mini-flujo funcionando, plantillas reutilizables y un checklist para escalar en tu equipo.</p>
-                <p>Duracion | 8 horas</p>
-                <p>Fecha de inicio | x</p>
-              <button class="btn btn-primary">Quiero Probar!</button>
+
+    <div style="grid-template-columns: 1fr 1fr 1fr;"  class="d-grid px-5 my-3 w-100 gap-4">
+      @for(service of services; track service.id){
+        <div class="card-container col">
+          <div class="card-tilt d-flex align-items-center flex-column rounded-4 border border-warning border-5 justify-content-between" appTiltCard [tiltStrength]="5">
+            <h3 class="mt-4 mb-2 ">{{service.name}}</h3>
+            <p class="p-content px-4">{{service.comment}}</p>
+
+            @if(service.message === ''){
+              <p class="p-content-duration ">Duracion | {{service.duration}} horas</p>
+              <p class="p-content-date ">Fecha de inicio | {{service.date}}</p>
+            }@else{
+              <p class="p-content-message">{{service.message}}</p>
+            }
+
+
+            <div class="w-100">
+              <button class="w-100 btn-primary py-2">{{service.messageButton}}</button>
+            </div>
           </div>
-      </div>
-
-      <div class="card-container" style="margin: 0 70px;">
-          <div class="card-tilt" appTiltCard [tiltStrength]="10">
-                <h3>DIPLOMADO</h3>
-                <p>Un recorrido completo y aplicado: de la estrategia y el buen uso de la IA, a la creación de agentes no-code, contenidos con IA y analítica para decidir mejor. Talleres guiados, casos reales y un proyecto final que aterriza lo aprendido en tu organización. Sales con un portafolio tangible y una ruta clara para implementar.</p>
-                <p>Duracion | 40 horas</p>
-                <p>Fecha de inicio | x</p>
-              <button class="btn btn-primary">Quiero Aprender!</button>
-          </div>
-      </div>
-
-      <div class="card-container">
-          <div class="card-tilt" appTiltCard [tiltStrength]="10">
-              <h3>MENTORIA</h3>
-              <p>Diagnóstico rápido, priorización de oportunidades y un blueprint a tu medida. Diseñamos contigo un agente o flujo no-code (y RPA si hace falta), lo integramos a tus herramientas y definimos KPIs para probar impacto. Cierre con playbooks y transferencia de conocimiento para que tu equipo lo mantenga y haga crecer.</p>
-              <p>Asesoría personalizada</p>
-              <p>Contactanos</p>
-              <button class="btn btn-primary">Lo necesito!</button>
-          </div>
-      </div>
-
+        </div>
+      }
     </div>
   </div>

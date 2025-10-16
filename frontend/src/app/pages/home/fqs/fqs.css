@@ -1,23 +1,32 @@
 .container-question {
-  border: 2px solid #d8d8d8;
-  overflow: hidden;
-  transition: max-height ease 0.5s, border ease-in 0.3s, background-color ease-in 0.3s;
-  border-radius: 30px;
+  width: 60%;
+  border: 3px solid #fff;
+  background-color: #fff;
   cursor: pointer;
-}
-
-.initial-container-question {
-  max-height: 2.7em;
-}
-
-.final-container-question {
-  max-height: 500px;
-}
-
-.initial-container-question:hover {
-  border: 2px solid #633a91;
-  background-color: #8057ae;
-  color: #fff;
+  transition: max-height 0.5s ease-in-out, color 0.4s ease-in-out, background-color 0.4s ease-in-out, border 0.4s ease-in-out, box-shadow 0.4s ease-in-out;
+  max-height: 3.8rem; 
   overflow: hidden;
-  transition: all ease-in 0.3s;
+  color: #113271;
+  box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075);
+}
+
+.final-continer-question {
+  max-height: 11rem;
+  box-shadow: 0 .125rem .25rem rgba(0, 0, 0, 0.18);
+}
+
+.answer {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.final-continer-question .answer {
+  opacity: 1;
+}
+
+/* Resto de estilos de hover... */
+.initial-container-question:hover {
+  border: 3px solid #eac300;
+  background-color: #FFD300;
+  box-shadow: 0 .125rem .25rem rgba(0, 0, 0, 0.2);
 }

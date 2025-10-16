@@ -29,3 +29,13 @@ export interface DataFQS{
   question: string;
   answer: string;
 }
+
+export interface Services{
+  id: number,
+  name: string,
+  comment: string,
+  duration: string,
+  date: string,
+  message: string,
+  messageButton: string
+}

@@ -1,16 +1,20 @@
 <div class="instructor-bg">
   <object data="/svg/endless-constellation.svg" type="image/svg+xml"> </object>
-    <div class="container d-flex flex-column align-items-center">
-      <h2 style="margin: 100px 0; color: #fff; z-index: 1;">Nuestros Instructores</h2>
-      <div class="d-flex mb-4">
-        @for(instructor of instructors; track instructor.id){
-          <div class="card d-flex flex-column align-items-center shadow p-2 mx-3 text-center">
-            <img [src]="instructor.photo" [alt]="instructor.name" class="foto w-50 rounded-circle my-4" />
-            <h3 class="mb-3" style="font-size: 27px;">{{ instructor.name }}</h3>
-            <p class="mb-2" style="font-size: 18px;">{{ instructor.title }}</p>
-            <p class="px-2" style="font-size: 18px;">{{ instructor.bio }}</p>
+    <div class="d-flex flex-column align-items-center my-4 px-5">
+      <div class="d-flex flex-column text-center">
+        <h2 class="text-white mt-3">Nuestros servicios</h2>
+        <p class="p-initial my-2">Programas especializados para impulsar tu carrera en el campo de la inteligencia artificial.</p>
+      </div>  
 
-            <div class="d-flex align-items-center mb-3">
+      <div style="grid-template-columns: 1fr 1fr 1fr 1fr;"  class="d-grid my-3 w-100 gap-4">
+        @for(instructor of instructors; track instructor.id){
+          <div class="m-card d-flex flex-column align-items-center justify-content-between shadow py-2 px-3 text-center col rounded-5">
+            <img [src]="instructor.photo" [alt]="instructor.name" class="foto w-50 rounded-circle my-3" />
+            <h3 class="mb-2 text-white" style="font-size: 30px;">{{ instructor.name }}</h3>
+            <p class="mb-2" style="font-size: 20px;">{{ instructor.title }}</p>
+            <p class="px-2" style="font-size: 20px;">{{ instructor.bio }}</p>
+
+            <div class="d-flex align-items-center mb-3 my-2">
               <a [href]="instructor.social.linkedin" target="_blank" class="text-white mx-2 text-decoration-none">
               <i class="ti ti-brand-linkedin-filled" style="font-size: 30px;"></i>
               </a>

@@ -1,6 +1,11 @@
 .instructor-bg {
   position: relative;
   overflow: hidden;
+  
+}
+
+.p-initial{
+  color: #ffffffb1;
 }
 
 .instructor-bg object {
@@ -11,14 +16,13 @@
   z-index: -1;
 }
 
-.coontainer{
+.container{
   position: relative;
   z-index: 1;
 }
 
-.card{
+.m-card{
   border: 2px solid #0458d9;
-  width: 25%;
   background-color: #05173d6c;
   color: #fff;
 }

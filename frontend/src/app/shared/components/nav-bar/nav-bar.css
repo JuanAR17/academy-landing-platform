@@ -13,7 +13,7 @@ nav {
   text-decoration: none;
   color: white;
   font-weight: 500;
-  padding: 1.5rem 1rem ;
+  padding: 1.2rem 1rem ;
   transition: ease-in-out 0.4s;
 }
 
@@ -29,6 +29,7 @@ nav {
 
 .btn-primary {
   width: 180px;
+  padding: 8px 0;
 }
 
 .scrolled {
@@ -40,7 +41,7 @@ nav {
 }
 
 .scrolled .nav-links a{
-  padding: 1rem;
+  padding: 0.7rem 1rem;
   transition: ease-in-out 0.4s;
 }
 

@@ -5,6 +5,7 @@ import { SignUp } from './pages/sign-up/sign-up';
 import { Contact } from './pages/contact/contact';
 import { About } from './pages/about/about';
 import { Courses } from './pages/courses/courses';
+import { Payment } from './pages/payment/payment';
 
 export const routes: Routes = [
   {
@@ -30,6 +31,10 @@ export const routes: Routes = [
   {
     path: 'contact',
     component: Contact,
+  },
+  {
+    path: 'payment',
+    component: Payment,
   },
   {
     path: '',

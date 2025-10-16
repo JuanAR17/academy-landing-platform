@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "name": "Master Class",
+    "comment": "Un día 100% práctico para pasar de “sé qué es la IA” a “ya la estoy usando”. Aprenderás prompting efectivo, construirás un agente no-code conectado a datos y optimizarás un proceso de oficina real. Incluye un mini-flujo funcional, plantillas y un checklist para escalar en tu equipo.",
+    "duration": "8",
+    "date": "x",
+    "message": "",
+    "messageButton": "Quiero Probar!"
+  },
+  {
+    "id": 2,
+    "name": "Diplomado",
+    "comment": "Recorrido completo y aplicado de IA: de la estrategia y el uso ético, a la creación de agentes no-code, contenido y analítica para la toma de decisiones. Incluye talleres guiados, casos reales y un proyecto final para tu organización. Finalizarás con un portafolio tangible y una ruta de implementación clara.",
+    "duration": "40",
+    "date": "x",
+    "message": "",
+    "messageButton": "Quiero Aprender!"
+  },
+  {
+    "id": 3,
+    "name": "Mentoria",
+    "comment": "Diagnóstico rápido, priorización de oportunidades y un blueprint a tu medida. Diseñamos contigo un agente o flujo no-code (y RPA si hace falta), lo integramos a tus herramientas y definimos KPIs para probar impacto. Cierre con playbooks y transferencia de conocimiento para que tu equipo lo mantenga y haga crecer.",
+    "duration": "",
+    "date": "",
+    "message": "Assesoria Personalizada",
+    "messageButton": "Lo Necesito!"
+  }
+]

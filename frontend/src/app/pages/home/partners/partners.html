@@ -1,9 +1,9 @@
- <div class="container my-4">
-    <h2 class="text-center" style="margin: 100px 0;">Nuestros Colaboradores</h2>
+ <div class="py-5">
+    <h2 class="text-center mb-5">Nuestros Colaboradores</h2>
     <div class="d-flex justify-content-center">
       @for(partner of partners; track partner){
         <a href="{{ partner.url }}" target="_blank" class="d-flex align-items-center">
-          <img [src]="partner.logo" [alt]="partner.name" style="width: 150px; margin: 0 100px;"/>
+          <img [src]="partner.logo" [alt]="partner.name" style="width: 200px; margin: 0 100px;"/>
         </a>
       }
     </div>

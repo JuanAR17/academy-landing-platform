@@ -3,7 +3,6 @@
 </header>
 
 <section class="hero">
-
   <div >
     <app-initial-information></app-initial-information>
   </div>
@@ -12,16 +11,20 @@
 
 </section>
 
-<section class="bg-white px-4" id="cronograma" style="margin-bottom: 100px;">
+<section>
+  <app-video></app-video>
+</section>
+
+<section>
   <app-diplomado-masterclass></app-diplomado-masterclass>
 </section>
 
 
-<section class="w-100" style="margin-bottom: 100px;">
+<section>
   <app-instructors></app-instructors>
 </section>
 
-<section class="mt-4" id="faq" style="margin-bottom: 100px;">
+<section>
   <app-fqs></app-fqs>
 </section>
 
@@ -59,12 +62,54 @@
   </div>
 </section>
 
-<section class="bg-white" style="margin-bottom: 100px;">
+<section>
   <app-partners></app-partners>
 </section>
 
 <footer>
-  <p style="font-size: 14px;">&copy; 2025 AcademIA. Todos los derechos reservados.</p>
-  <p>Ponte en contacto | tel: 6722991</p>
+  <div class="d-flex justify-content-between w-100 px-5 pt-4">
+      
+      <div class="footer-col footer-col-info d-flex flex-column">
+          <div class="footer-logo">
+            <img src="icons/logoBlancoAmarillo.png" alt="iAcademIA Logo" class="logo"/>
+          </div>
+          <p class="text-start">Transformando carreras a través de la educación en Inteligencia Artificial.</p>
+      </div>
+
+      <div class="footer-col d-flex flex-column">
+          <h3 class="mb-3">
+            Servicios
+          </h3>
+            <a href="#" class="mb-2">Master Class</a>
+            <a href="#" class="mb-2">Diplomado</a>
+            <a href="#" class="mb-2">Mentoria</a>
+      </div>
+
+      <div class="footer-col d-flex flex-column">
+        <h3 class="mb-3">
+          iAcademIA
+        </h3 >
+          <a href="#" class="mb-2">Cursos</a>
+          <a href="#" class="mb-2">Sobre nosotros</a>
+          <a href="#" class="mb-2">Contacto</a>
+          <a href="#" class="mb-2">Blog</a>
+      </div>
+
+      <div class="footer-col d-flex flex-column">
+          <h3 class="mb-3">
+            Síguenos
+          </h3>
+          <div class="social-icons">
+              <a href="#"><i class="fab fa-facebook-f"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+              <a href="#"><i class="fab fa-github"></i></a>
+          </div>
+      </div>
+
+  </div>
+
+  <div class="footer-bottom mt-4 pt-4 text-center">
+      <p>© 2024 AcademiA. Todos los derechos reservados.</p>
+  </div>
 </footer>
 

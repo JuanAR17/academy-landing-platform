@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
-import { DataFQS, DataInstructors, DataPartners, DataSuccessStory } from '../../shared/interfaces/home-interfaces';
+import { DataFQS, DataInstructors, DataPartners, DataSuccessStory, Services } from '../../shared/interfaces/home-interfaces';
 
 @Injectable({
   providedIn: 'root'
@@ -25,5 +25,9 @@ export class HomeData {
 
   getDataPartners() {
     return this.http.get<DataPartners[]>(`${this.localData}/partners.json`);
+  }
+
+  getDataServices() {
+    return this.http.get<Services[]>(`${this.localData}/services.json`);
   }
 }

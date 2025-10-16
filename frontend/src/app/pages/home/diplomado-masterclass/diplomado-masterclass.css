@@ -1,79 +1,68 @@
 .card-container {
-    width: 400px;
-    height: auto;
-    perspective: 1000px;
+    perspective: 1200px;
 }
 
 .card-tilt {
     width: 100%;
-    height: auto;
+    height: 50%; 
     color: #fff;
-    background: linear-gradient(135deg, #113370 0%, #091A38 30%, #113370 60%, #091A38 100%);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-    padding: 30px;
+    background-color: #113370;
+    box-shadow: 0 20px 20px rgba(0, 0, 0, 0.3);
     text-align: center;
     transform-style: preserve-3d;
-    transition: transform 0.1s ease-out;
     transform: rotateX(0deg) rotateY(0deg);
-    border-radius: 5px;
-    border-image: linear-gradient(
-        to right,
-        #8B6508 0%,
-        #fded9c 25%,
-        #fded9c 50%,
-        #8B6508 75%,
-        #fded9c 100%
-    );
-    border-image-slice: 1;
-    border-image-width: 5px;
-    border-image-repeat: stretch;
-    border-image-outset: 0;
-    animation: moverBorde 4s linear infinite;
+    overflow: hidden; 
+    transition: height 0.5s ease-in-out, transform 0.1s ease-out; 
 }
 
-@keyframes moverBorde {
-    0% {
-        border-image-source: linear-gradient(
-            45deg,
-            #8B6508 0%, #fded9c 15%, #8B6508 30%, #fded9c 45%,
-            #8B6508 60%, #fded9c 75%, #8B6508 90%, #fded9c 100%
-        );
-    }
-    50% {
-         border-image-source: linear-gradient(
-            45deg,
-            #fded9c 0%, #8B6508 15%, #fded9c 30%, #8B6508 45%,
-            #fded9c 60%, #8B6508 75%, #fded9c 90%, #8B6508 100%
-        );
-    }
-    100% {
-        border-image-source: linear-gradient(
-            45deg,
-            #8B6508 0%, #fded9c 15%, #8B6508 30%, #fded9c 45%,
-            #8B6508 60%, #fded9c 75%, #8B6508 90%, #fded9c 100%
-        );
-    }
+.card-tilt:hover{
+    height: 480px;
 }
 
 .card-tilt h3 {
-    margin-top: 0;
-    margin-bottom: 2px;
+    color: #FFD300;
     font-size: 30px;
 }
 
-.card-tilt p:first-of-type{
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 18px;
-    padding: 20px;
+.p-content {
+    font-size: 19px;
+    position: relative;
+    margin: 0 auto;
 }
 
-.card-tilt p:last-of-type{
-    margin-top: 0;
-    margin-bottom: 30px;
-    font-size: 20px;
+.p-content::after {
+    content: '';
+    position: absolute;
+    bottom: 0; 
+    left: 0;
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(
+        to bottom, 
+        rgba(17, 51, 112, 0) 0%, 
+        rgba(17, 51, 112, 1) 100% 
+    );
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+    pointer-events: none; 
 }
 
-.btn{
-    margin: 30px 0;
+.card-tilt:hover .p-content::after {
+    opacity: 0;
+}
+
+.p-content-duration{
+    font-size: 17px;
+    color: #dbdbdb;
+}
+
+.p-content-date{
+    font-size: 17px;
+    color: #dbdbdb;
+}
+
+.p-content-message{
+    font-size: 17px;
+    color: #dbdbdb;
+    margin: 27px 0;
 }

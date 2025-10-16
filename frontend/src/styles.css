@@ -2,15 +2,31 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Oswald",sans-serif;
-  font-size: 20px;
+  font-size: 22px;
+  font-weight: 500;
+}
+
+body{
+    background-color: #f6f8fb;
+}
+
+h1, h2, h3, h4, h5{
+  margin: 0;
+  font-family: "Roboto", "Open Sans";
+  font-weight: 800;
+  color: #113271;
+}
+
+p{
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
 }
 
 .btn-primary {
   background: #2F80ED;
   color: #fff;
   border: none;
-  border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
   transition: all 0.3s ease-in-out;
@@ -19,5 +35,5 @@
 .btn-primary:hover {
   background: #FFD300;
   color: #051024;
-  transform: scale(1.03);
+
 }
