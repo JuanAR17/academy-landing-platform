@@ -18,20 +18,22 @@ spring:
   flyway:
     enabled: false
     locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
 
 app:
-  corsAllowed: ${CORS_ALLOWED_ORIGINS:}  # coma-separado
+  corsAllowed: ${CORS_ALLOWED_ORIGINS:} # coma-separado
 
 jwt:
   alg: ${JWT_ALG:HS256}
-  secret: ${JWT_SECRET:dev-secret-change-me}
+  secret: ${JWT_SECRET:super-secret-jwt-key-minimum-256-bits-required-change-in-production}
   privateKey: ${JWT_PRIVATE_KEY:}
   publicKey: ${JWT_PUBLIC_KEY:}
   accessTtlMinutes: ${ACCESS_TTL_MINUTES:15}
   sessionTtlDays: ${SESSION_TTL_DAYS:60}
 
 refresh:
-  hmacSecret: ${REFRESH_HMAC_SECRET:dev-rt-hmac}
+  hmacSecret: ${REFRESH_HMAC_SECRET:super-secret-refresh-hmac-key-minimum-256-bits-change-in-production}
 
 cookies:
   secure: ${COOKIE_SECURE:false}

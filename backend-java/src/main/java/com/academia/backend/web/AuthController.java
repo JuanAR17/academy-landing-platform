@@ -2,7 +2,9 @@ package com.academia.backend.web;
 
 import com.academia.backend.domain.SessionEntity;
 import com.academia.backend.domain.UserEntity;
+import com.academia.backend.dto.ChangePasswordIn;
 import com.academia.backend.dto.LoginIn;
+import com.academia.backend.dto.RegisterIn;
 import com.academia.backend.dto.TokenOut;
 import com.academia.backend.repo.SessionRepo;
 import com.academia.backend.repo.UserRepo;
@@ -16,11 +18,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth")
@@ -46,7 +50,7 @@ public class AuthController {
   @Operation(summary = "Login: crea sesión y entrega access JWT + cookies (rt, csrf)")
   public ResponseEntity<TokenOut> login(@Valid @RequestBody LoginIn in,
                                         @RequestHeader(value="User-Agent", required=false) String ua) throws Exception {
-    UserEntity user = users.findByEmail(in.email)
+    UserEntity user = users.findByEmailOrUsername(in.identifier)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
     if (!auth.verifyPassword(user.getPasswordHash(), in.password))
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
@@ -64,6 +68,48 @@ public class AuthController {
     headers.add(HttpHeaders.SET_COOKIE, buildCookie(RT_COOKIE, refreshPlain, true, 60L*60*24*60));
     headers.add(HttpHeaders.SET_COOKIE, buildCookie(CSRF_COOKIE, csrf, false, 60L*60*24*60));
     return ResponseEntity.ok().headers(headers).body(out);
+  }
+
+  @PostMapping("/register")
+  @Operation(summary = "Registro de nuevo usuario")
+  public ResponseEntity<TokenOut> register(@Valid @RequestBody RegisterIn in,
+                                          @RequestHeader(value="User-Agent", required=false) String ua) throws Exception {
+    // Valida que el email no exista
+    if (users.findByEmail(in.correo).isPresent()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El email ya está registrado");
+    }
+    
+    // Valida que el username no exista
+    if (users.findByUsername(in.username).isPresent()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de usuario ya está en uso");
+    }
+
+    // Crea un nuevo usuario
+    UserEntity user = new UserEntity();
+    user.setEmail(in.correo);
+    user.setUsername(in.username);
+    user.setPasswordHash(auth.hashPassword(in.contrasena));
+    user.setNombre(in.nombre);
+    user.setApellido(in.apellido);
+    user.setTelefono(in.telefono);
+    user.setNacionalidad(in.nacionalidad);
+    user.setDireccion(in.direccion);
+    user.setDondeNosViste(in.dondeNosViste);
+    user = users.save(user);
+
+    // Crea una sesión automáticamente
+    String refreshPlain = auth.genRandomUrlToken();
+    byte[] rth = auth.hmacRefresh(refreshPlain);
+    SessionEntity row = auth.newSession(user.getId(), rth, ua);
+
+    String csrf = auth.genRandomUrlToken();
+    String access = jwt.mintAccess(user.getId().toString(), row.getId().toString());
+    TokenOut out = new TokenOut(access, csrf);
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(HttpHeaders.SET_COOKIE, buildCookie(RT_COOKIE, refreshPlain, true, 60L*60*24*60));
+    headers.add(HttpHeaders.SET_COOKIE, buildCookie(CSRF_COOKIE, csrf, false, 60L*60*24*60));
+    return ResponseEntity.status(HttpStatus.CREATED).headers(headers).body(out);
   }
 
   @PostMapping("/refresh")
@@ -112,6 +158,31 @@ public class AuthController {
 
   @GetMapping("/check")
   public java.util.Map<String, String> check() { return java.util.Map.of("status", "success"); }
+
+  @PostMapping("/change-password")
+  @Operation(summary = "Cambiar contraseña del usuario autenticado")
+  public ResponseEntity<java.util.Map<String, String>> changePassword(@Valid @RequestBody ChangePasswordIn in) {
+    // Obtiene el userId del contexto de seguridad (JWT)
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || !authentication.isAuthenticated()) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
+    }
+    
+    String userIdStr = authentication.getName();
+    UUID userId;
+    try {
+      userId = UUID.fromString(userIdStr);
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido");
+    }
+    
+    try {
+      auth.changePassword(userId, in.currentPassword, in.newPassword);
+      return ResponseEntity.ok(java.util.Map.of("message", "Contraseña actualizada exitosamente"));
+    } catch (RuntimeException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+  }
 
   // ---- helpers cookies ----
   private String buildCookie(String name, String value, boolean httpOnly, long maxAgeSeconds) {
