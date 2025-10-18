@@ -38,6 +38,9 @@ public class UserEntity {
   @Column(name = "donde_nos_viste")
   private String dondeNosViste;
 
+  @Column(name = "is_admin", nullable = false)
+  private boolean isAdmin = false;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
 
@@ -127,6 +130,14 @@ public class UserEntity {
 
   public void setDondeNosViste(String dondeNosViste) {
     this.dondeNosViste = dondeNosViste;
+  }
+
+  public boolean isAdmin() {
+    return isAdmin;
+  }
+
+  public void setAdmin(boolean isAdmin) {
+    this.isAdmin = isAdmin;
   }
 
   public Instant getCreatedAt() {
