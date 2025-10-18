@@ -32,8 +32,9 @@ public class UserEntity {
   @Column(name = "nacionalidad")
   private String nacionalidad;
 
-  @Column(name = "direccion")
-  private String direccion;
+  @OneToOne(cascade = CascadeType.ALL)
+  @JoinColumn(name = "address_id")
+  private Address address;
 
   @Column(name = "donde_nos_viste")
   private String dondeNosViste;
@@ -116,12 +117,12 @@ public class UserEntity {
     this.nacionalidad = nacionalidad;
   }
 
-  public String getDireccion() {
-    return direccion;
+  public Address getAddress() {
+    return address;
   }
 
-  public void setDireccion(String direccion) {
-    this.direccion = direccion;
+  public void setAddress(Address address) {
+    this.address = address;
   }
 
   public String getDondeNosViste() {

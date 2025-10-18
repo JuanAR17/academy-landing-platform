@@ -1,5 +1,6 @@
 package com.academia.backend.web;
 
+import com.academia.backend.domain.Address;
 import com.academia.backend.domain.SessionEntity;
 import com.academia.backend.domain.UserEntity;
 import com.academia.backend.dto.ChangePasswordIn;
@@ -103,7 +104,14 @@ public class AuthController {
     user.setApellido(in.getApellido());
     user.setTelefono(in.getTelefono());
     user.setNacionalidad(in.getNacionalidad());
-    user.setDireccion(in.getDireccion());
+    if (in.getAddress() != null) {
+      Address address = new Address();
+      address.setDireccion(in.getAddress().getDireccion());
+      address.setCiudad(in.getAddress().getCiudad());
+      address.setDepartamento(in.getAddress().getDepartamento());
+      address.setPais(in.getAddress().getPais());
+      user.setAddress(address);
+    }
     user.setDondeNosViste(in.getDondeNosViste());
     user = users.save(user);
 
@@ -254,7 +262,10 @@ public class AuthController {
         response.put("apellido", currentUser.getApellido());
         response.put("telefono", currentUser.getTelefono());
         response.put("nacionalidad", currentUser.getNacionalidad());
-        response.put("direccion", currentUser.getDireccion());
+        response.put("direccion", currentUser.getAddress() != null ? currentUser.getAddress().getDireccion() : null);
+        response.put("ciudad", currentUser.getAddress() != null ? currentUser.getAddress().getCiudad() : null);
+        response.put("departamento", currentUser.getAddress() != null ? currentUser.getAddress().getDepartamento() : null);
+        response.put("pais", currentUser.getAddress() != null ? currentUser.getAddress().getPais() : null);
         response.put("dondeNosViste", currentUser.getDondeNosViste());
         return ResponseEntity.ok(response);
       } else {

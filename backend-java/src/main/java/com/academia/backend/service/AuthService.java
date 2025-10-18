@@ -1,7 +1,9 @@
 package com.academia.backend.service;
 
+import com.academia.backend.domain.Address;
 import com.academia.backend.domain.SessionEntity;
 import com.academia.backend.domain.UserEntity;
+import com.academia.backend.dto.AddressDto;
 import com.academia.backend.dto.TokenOut;
 import com.academia.backend.dto.UserDto;
 import com.academia.backend.repo.SessionRepo;
@@ -153,8 +155,21 @@ public class AuthService {
       user.setTelefono(updateData.getTelefono());
     if (updateData.getNacionalidad() != null)
       user.setNacionalidad(updateData.getNacionalidad());
-    if (updateData.getDireccion() != null)
-      user.setDireccion(updateData.getDireccion());
+    if (updateData.getAddress() != null) {
+      Address address = user.getAddress();
+      if (address == null) {
+        address = new Address();
+        user.setAddress(address);
+      }
+      if (updateData.getAddress().getDireccion() != null)
+        address.setDireccion(updateData.getAddress().getDireccion());
+      if (updateData.getAddress().getCiudad() != null)
+        address.setCiudad(updateData.getAddress().getCiudad());
+      if (updateData.getAddress().getDepartamento() != null)
+        address.setDepartamento(updateData.getAddress().getDepartamento());
+      if (updateData.getAddress().getPais() != null)
+        address.setPais(updateData.getAddress().getPais());
+    }
     if (updateData.getDondeNosViste() != null)
       user.setDondeNosViste(updateData.getDondeNosViste());
     if (updateData.getIsAdmin() != null)
@@ -174,7 +189,14 @@ public class AuthService {
     dto.setApellido(user.getApellido());
     dto.setTelefono(user.getTelefono());
     dto.setNacionalidad(user.getNacionalidad());
-    dto.setDireccion(user.getDireccion());
+    if (user.getAddress() != null) {
+      AddressDto addressDto = new AddressDto();
+      addressDto.setDireccion(user.getAddress().getDireccion());
+      addressDto.setCiudad(user.getAddress().getCiudad());
+      addressDto.setDepartamento(user.getAddress().getDepartamento());
+      addressDto.setPais(user.getAddress().getPais());
+      dto.setAddress(addressDto);
+    }
     dto.setDondeNosViste(user.getDondeNosViste());
     dto.setIsAdmin(user.isAdmin());
     dto.createdAt = user.getCreatedAt();
@@ -205,7 +227,14 @@ public class AuthService {
           dto.setApellido(user.getApellido());
           dto.setTelefono(user.getTelefono());
           dto.setNacionalidad(user.getNacionalidad());
-          dto.setDireccion(user.getDireccion());
+          if (user.getAddress() != null) {
+            AddressDto addressDto = new AddressDto();
+            addressDto.setDireccion(user.getAddress().getDireccion());
+            addressDto.setCiudad(user.getAddress().getCiudad());
+            addressDto.setDepartamento(user.getAddress().getDepartamento());
+            addressDto.setPais(user.getAddress().getPais());
+            dto.setAddress(addressDto);
+          }
           dto.setDondeNosViste(user.getDondeNosViste());
           dto.setIsAdmin(user.isAdmin());
           dto.createdAt = user.getCreatedAt();

@@ -19,7 +19,7 @@ public class SecurityConfig {
     http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
     http.authorizeHttpRequests(auth -> auth
         .requestMatchers("/auth/login", "/auth/register", "/auth/refresh", "/auth/check", "/auth/logout",
-            "/health", "/ingest",
+            "/health", "/ingest", "/api/locations/**",
             "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
         .permitAll()
         .anyRequest().authenticated());

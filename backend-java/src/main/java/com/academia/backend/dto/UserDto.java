@@ -25,7 +25,7 @@ public class UserDto {
 
     protected String nacionalidad;
 
-    protected String direccion;
+    protected AddressDto address;
 
     protected String dondeNosViste;
 
@@ -35,30 +35,75 @@ public class UserDto {
     public Instant createdAt;
 
     // Getters and setters
-    public String getCorreo() { return correo; }
-    public void setCorreo(String correo) { this.correo = correo; }
+    public String getCorreo() {
+        return correo;
+    }
 
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
+    public void setCorreo(String correo) {
+        this.correo = correo;
+    }
 
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getUsername() {
+        return username;
+    }
 
-    public String getApellido() { return apellido; }
-    public void setApellido(String apellido) { this.apellido = apellido; }
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
-    public String getTelefono() { return telefono; }
-    public void setTelefono(String telefono) { this.telefono = telefono; }
+    public String getNombre() {
+        return nombre;
+    }
 
-    public String getNacionalidad() { return nacionalidad; }
-    public void setNacionalidad(String nacionalidad) { this.nacionalidad = nacionalidad; }
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
 
-    public String getDireccion() { return direccion; }
-    public void setDireccion(String direccion) { this.direccion = direccion; }
+    public String getApellido() {
+        return apellido;
+    }
 
-    public String getDondeNosViste() { return dondeNosViste; }
-    public void setDondeNosViste(String dondeNosViste) { this.dondeNosViste = dondeNosViste; }
+    public void setApellido(String apellido) {
+        this.apellido = apellido;
+    }
 
-    public Boolean getIsAdmin() { return isAdmin; }
-    public void setIsAdmin(Boolean isAdmin) { this.isAdmin = isAdmin; }
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    public String getNacionalidad() {
+        return nacionalidad;
+    }
+
+    public void setNacionalidad(String nacionalidad) {
+        this.nacionalidad = nacionalidad;
+    }
+
+    public AddressDto getAddress() {
+        return address;
+    }
+
+    public void setAddress(AddressDto address) {
+        this.address = address;
+    }
+
+    public String getDondeNosViste() {
+        return dondeNosViste;
+    }
+
+    public void setDondeNosViste(String dondeNosViste) {
+        this.dondeNosViste = dondeNosViste;
+    }
+
+    public Boolean getIsAdmin() {
+        return isAdmin;
+    }
+
+    public void setIsAdmin(Boolean isAdmin) {
+        this.isAdmin = isAdmin;
+    }
 }
