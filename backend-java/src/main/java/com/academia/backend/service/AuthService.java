@@ -2,9 +2,6 @@ package com.academia.backend.service;
 
 import com.academia.backend.domain.SessionEntity;
 import com.academia.backend.domain.UserEntity;
-import com.academia.backend.dto.ChangePasswordIn;
-import com.academia.backend.dto.LoginIn;
-import com.academia.backend.dto.RegisterIn;
 import com.academia.backend.dto.TokenOut;
 import com.academia.backend.dto.UserDto;
 import com.academia.backend.repo.SessionRepo;
@@ -17,6 +14,8 @@ import org.springframework.stereotype.Service;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -30,6 +29,12 @@ public class AuthService {
   private final JwtService jwt;
   private final SecureRandom rnd = new SecureRandom();
   private final Argon2PasswordEncoder argon = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
+
+  private static final String USER_NOT_FOUND = "Usuario no encontrado";
+  private static final String INCORRECT_PASSWORD = "La contraseña actual es incorrecta";
+  private static final String SAME_PASSWORD = "La nueva contraseña debe ser diferente a la actual";
+  private static final String EMAIL_IN_USE = "El email ya está registrado";
+  private static final String USERNAME_IN_USE = "El nombre de usuario ya está en uso";
 
   @Value("${jwt.sessionTtlDays:60}")
   long sessionTtlDays;
@@ -64,10 +69,14 @@ public class AuthService {
     return Base64.getUrlEncoder().withoutPadding().encodeToString(buf);
   }
 
-  public byte[] hmacRefresh(String plain) throws Exception {
-    Mac mac = Mac.getInstance("HmacSHA256");
-    mac.init(new SecretKeySpec(refreshSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-    return mac.doFinal(plain.getBytes(StandardCharsets.UTF_8));
+  public byte[] hmacRefresh(String plain) {
+    try {
+      Mac mac = Mac.getInstance("HmacSHA256");
+      mac.init(new SecretKeySpec(refreshSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+      return mac.doFinal(plain.getBytes(StandardCharsets.UTF_8));
+    } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+      throw new IllegalStateException("Error generating refresh token", e);
+    }
   }
 
   public Cookie buildHttpOnlyCookie(String name, String value, long maxAgeSeconds) {
@@ -98,16 +107,16 @@ public class AuthService {
 
   public void changePassword(UUID userId, String currentPassword, String newPassword) {
     UserEntity user = users.findById(userId)
-        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND));
 
     // Verifica que la contraseña actual sea correcta
     if (!verifyPassword(user.getPasswordHash(), currentPassword)) {
-      throw new RuntimeException("La contraseña actual es incorrecta");
+      throw new IllegalArgumentException(INCORRECT_PASSWORD);
     }
 
     // Verifica que la nueva contraseña sea diferente a la actual
     if (verifyPassword(user.getPasswordHash(), newPassword)) {
-      throw new RuntimeException("La nueva contraseña debe ser diferente a la actual");
+      throw new IllegalArgumentException(SAME_PASSWORD);
     }
 
     // Actualiza la contraseña
@@ -117,57 +126,57 @@ public class AuthService {
 
   public void updateUser(UUID userId, UserDto updateData) {
     UserEntity user = users.findById(userId)
-        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND));
 
     // Valida que el email no esté en uso por otro usuario
-    if (updateData.correo != null && !updateData.correo.equals(user.getEmail())) {
-      if (users.findByEmail(updateData.correo).isPresent()) {
-        throw new RuntimeException("El email ya está registrado");
+    if (updateData.getCorreo() != null && !updateData.getCorreo().equals(user.getEmail())) {
+      if (users.findByEmail(updateData.getCorreo()).isPresent()) {
+        throw new IllegalArgumentException(EMAIL_IN_USE);
       }
-      user.setEmail(updateData.correo);
+      user.setEmail(updateData.getCorreo());
     }
 
     // Valida que el username no esté en uso por otro usuario
-    if (updateData.username != null && !updateData.username.equals(user.getUsername())) {
-      if (users.findByUsername(updateData.username).isPresent()) {
-        throw new RuntimeException("El nombre de usuario ya está en uso");
+    if (updateData.getUsername() != null && !updateData.getUsername().equals(user.getUsername())) {
+      if (users.findByUsername(updateData.getUsername()).isPresent()) {
+        throw new IllegalArgumentException(USERNAME_IN_USE);
       }
-      user.setUsername(updateData.username);
+      user.setUsername(updateData.getUsername());
     }
 
     // Actualiza otros campos si no son null
-    if (updateData.nombre != null)
-      user.setNombre(updateData.nombre);
-    if (updateData.apellido != null)
-      user.setApellido(updateData.apellido);
-    if (updateData.telefono != null)
-      user.setTelefono(updateData.telefono);
-    if (updateData.nacionalidad != null)
-      user.setNacionalidad(updateData.nacionalidad);
-    if (updateData.direccion != null)
-      user.setDireccion(updateData.direccion);
-    if (updateData.dondeNosViste != null)
-      user.setDondeNosViste(updateData.dondeNosViste);
-    if (updateData.isAdmin != null)
-      user.setAdmin(updateData.isAdmin);
+    if (updateData.getNombre() != null)
+      user.setNombre(updateData.getNombre());
+    if (updateData.getApellido() != null)
+      user.setApellido(updateData.getApellido());
+    if (updateData.getTelefono() != null)
+      user.setTelefono(updateData.getTelefono());
+    if (updateData.getNacionalidad() != null)
+      user.setNacionalidad(updateData.getNacionalidad());
+    if (updateData.getDireccion() != null)
+      user.setDireccion(updateData.getDireccion());
+    if (updateData.getDondeNosViste() != null)
+      user.setDondeNosViste(updateData.getDondeNosViste());
+    if (updateData.getIsAdmin() != null)
+      user.setAdmin(updateData.getIsAdmin());
 
     users.save(user);
   }
 
   public UserDto getUserInfo(UUID userId) {
     UserEntity user = users.findById(userId)
-        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND));
     UserDto dto = new UserDto();
     dto.id = user.getId();
-    dto.correo = user.getEmail();
-    dto.username = user.getUsername();
-    dto.nombre = user.getNombre();
-    dto.apellido = user.getApellido();
-    dto.telefono = user.getTelefono();
-    dto.nacionalidad = user.getNacionalidad();
-    dto.direccion = user.getDireccion();
-    dto.dondeNosViste = user.getDondeNosViste();
-    dto.isAdmin = user.isAdmin();
+    dto.setCorreo(user.getEmail());
+    dto.setUsername(user.getUsername());
+    dto.setNombre(user.getNombre());
+    dto.setApellido(user.getApellido());
+    dto.setTelefono(user.getTelefono());
+    dto.setNacionalidad(user.getNacionalidad());
+    dto.setDireccion(user.getDireccion());
+    dto.setDondeNosViste(user.getDondeNosViste());
+    dto.setIsAdmin(user.isAdmin());
     dto.createdAt = user.getCreatedAt();
     return dto;
   }
@@ -180,7 +189,7 @@ public class AuthService {
     } catch (IllegalArgumentException e) {
       // No es UUID, busca por email o username
       UserEntity user = users.findByEmailOrUsername(identifier)
-          .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+          .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND));
       return getUserInfo(user.getId());
     }
   }
@@ -190,15 +199,15 @@ public class AuthService {
         .map(user -> {
           UserDto dto = new UserDto();
           dto.id = user.getId();
-          dto.correo = user.getEmail();
-          dto.username = user.getUsername();
-          dto.nombre = user.getNombre();
-          dto.apellido = user.getApellido();
-          dto.telefono = user.getTelefono();
-          dto.nacionalidad = user.getNacionalidad();
-          dto.direccion = user.getDireccion();
-          dto.dondeNosViste = user.getDondeNosViste();
-          dto.isAdmin = user.isAdmin();
+          dto.setCorreo(user.getEmail());
+          dto.setUsername(user.getUsername());
+          dto.setNombre(user.getNombre());
+          dto.setApellido(user.getApellido());
+          dto.setTelefono(user.getTelefono());
+          dto.setNacionalidad(user.getNacionalidad());
+          dto.setDireccion(user.getDireccion());
+          dto.setDondeNosViste(user.getDondeNosViste());
+          dto.setIsAdmin(user.isAdmin());
           dto.createdAt = user.getCreatedAt();
           return dto;
         })

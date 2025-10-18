@@ -12,25 +12,53 @@ public class UserDto {
     public UUID id;
 
     @Email(message = "Email inválido")
-    public String correo;
+    protected String correo;
 
     @Size(min = 3, max = 50, message = "El nombre de usuario debe tener entre 3 y 50 caracteres")
-    public String username;
+    protected String username;
 
-    public String nombre;
+    protected String nombre;
 
-    public String apellido;
+    protected String apellido;
 
-    public String telefono;
+    protected String telefono;
 
-    public String nacionalidad;
+    protected String nacionalidad;
 
-    public String direccion;
+    protected String direccion;
 
-    public String dondeNosViste;
+    protected String dondeNosViste;
 
-    public Boolean isAdmin;
+    protected Boolean isAdmin;
 
     @JsonIgnore
     public Instant createdAt;
+
+    // Getters and setters
+    public String getCorreo() { return correo; }
+    public void setCorreo(String correo) { this.correo = correo; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+
+    public String getApellido() { return apellido; }
+    public void setApellido(String apellido) { this.apellido = apellido; }
+
+    public String getTelefono() { return telefono; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
+
+    public String getNacionalidad() { return nacionalidad; }
+    public void setNacionalidad(String nacionalidad) { this.nacionalidad = nacionalidad; }
+
+    public String getDireccion() { return direccion; }
+    public void setDireccion(String direccion) { this.direccion = direccion; }
+
+    public String getDondeNosViste() { return dondeNosViste; }
+    public void setDondeNosViste(String dondeNosViste) { this.dondeNosViste = dondeNosViste; }
+
+    public Boolean getIsAdmin() { return isAdmin; }
+    public void setIsAdmin(Boolean isAdmin) { this.isAdmin = isAdmin; }
 }

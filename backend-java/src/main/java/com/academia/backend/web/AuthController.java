@@ -59,7 +59,7 @@ public class AuthController {
   @PostMapping("/login")
   @Operation(summary = "Login: crea sesión y entrega access JWT + cookies (rt, csrf)")
   public ResponseEntity<TokenOut> login(@Valid @RequestBody LoginIn in,
-      @RequestHeader(value = "User-Agent", required = false) String ua) throws Exception {
+      @RequestHeader(value = "User-Agent", required = false) String ua) {
     UserEntity user = users.findByEmailOrUsername(in.identifier)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
     if (!auth.verifyPassword(user.getPasswordHash(), in.password))
@@ -83,28 +83,28 @@ public class AuthController {
   @PostMapping("/register")
   @Operation(summary = "Registro de nuevo usuario")
   public ResponseEntity<TokenOut> register(@Valid @RequestBody RegisterIn in,
-      @RequestHeader(value = "User-Agent", required = false) String ua) throws Exception {
+      @RequestHeader(value = "User-Agent", required = false) String ua) {
     // Valida que el email no exista
-    if (users.findByEmail(in.correo).isPresent()) {
+    if (users.findByEmail(in.getCorreo()).isPresent()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El email ya está registrado");
     }
 
     // Valida que el username no exista
-    if (users.findByUsername(in.username).isPresent()) {
+    if (users.findByUsername(in.getUsername()).isPresent()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de usuario ya está en uso");
     }
 
     // Crea un nuevo usuario
     UserEntity user = new UserEntity();
-    user.setEmail(in.correo);
-    user.setUsername(in.username);
+    user.setEmail(in.getCorreo());
+    user.setUsername(in.getUsername());
     user.setPasswordHash(auth.hashPassword(in.contrasena));
-    user.setNombre(in.nombre);
-    user.setApellido(in.apellido);
-    user.setTelefono(in.telefono);
-    user.setNacionalidad(in.nacionalidad);
-    user.setDireccion(in.direccion);
-    user.setDondeNosViste(in.dondeNosViste);
+    user.setNombre(in.getNombre());
+    user.setApellido(in.getApellido());
+    user.setTelefono(in.getTelefono());
+    user.setNacionalidad(in.getNacionalidad());
+    user.setDireccion(in.getDireccion());
+    user.setDondeNosViste(in.getDondeNosViste());
     user = users.save(user);
 
     // Crea una sesión automáticamente
@@ -124,7 +124,7 @@ public class AuthController {
 
   @PostMapping("/refresh")
   @Operation(summary = "Rota refresh y entrega nuevo access")
-  public ResponseEntity<TokenOut> refresh(HttpServletRequest req) throws Exception {
+  public ResponseEntity<TokenOut> refresh(HttpServletRequest req) {
     String csrfCookie = getCookie(req, CSRF_COOKIE);
     String csrfHeader = req.getHeader("X-CSRF-Token");
     if (csrfCookie == null || csrfHeader == null || !csrfCookie.equals(csrfHeader))
@@ -157,7 +157,7 @@ public class AuthController {
   @PostMapping("/logout")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(summary = "Revoca sesión y borra cookies")
-  public void logout(HttpServletRequest req, HttpServletResponse res) throws Exception {
+  public void logout(HttpServletRequest req, HttpServletResponse res) {
     String rt = getCookie(req, RT_COOKIE);
     if (rt != null) {
       byte[] rth = auth.hmacRefresh(rt);
@@ -246,23 +246,23 @@ public class AuthController {
 
     if (identifier == null || identifier.trim().isEmpty()) {
       // Sin identifier: devolver info del autenticado
-      if (!Boolean.TRUE.equals(currentUser.isAdmin)) {
+      if (!Boolean.TRUE.equals(currentUser.getIsAdmin())) {
         Map<String, Object> response = new HashMap<>();
-        response.put("correo", currentUser.correo);
-        response.put("username", currentUser.username);
-        response.put("nombre", currentUser.nombre);
-        response.put("apellido", currentUser.apellido);
-        response.put("telefono", currentUser.telefono);
-        response.put("nacionalidad", currentUser.nacionalidad);
-        response.put("direccion", currentUser.direccion);
-        response.put("dondeNosViste", currentUser.dondeNosViste);
+        response.put("correo", currentUser.getCorreo());
+        response.put("username", currentUser.getUsername());
+        response.put("nombre", currentUser.getNombre());
+        response.put("apellido", currentUser.getApellido());
+        response.put("telefono", currentUser.getTelefono());
+        response.put("nacionalidad", currentUser.getNacionalidad());
+        response.put("direccion", currentUser.getDireccion());
+        response.put("dondeNosViste", currentUser.getDondeNosViste());
         return ResponseEntity.ok(response);
       } else {
         return ResponseEntity.ok(currentUser);
       }
     } else {
       // Con identifier: solo admins pueden buscar otros usuarios
-      if (!Boolean.TRUE.equals(currentUser.isAdmin)) {
+      if (!Boolean.TRUE.equals(currentUser.getIsAdmin())) {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo administradores pueden buscar otros usuarios");
       }
       try {
@@ -292,12 +292,12 @@ public class AuthController {
 
     // Verificar si es admin
     UserDto currentUser = auth.getUserInfo(userId);
-    if (!Boolean.TRUE.equals(currentUser.isAdmin)) {
+    if (!Boolean.TRUE.equals(currentUser.getIsAdmin())) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo administradores pueden ver la lista de usuarios");
     }
 
-    java.util.List<UserDto> users = auth.getAllUsers();
-    return ResponseEntity.ok(users);
+    java.util.List<UserDto> userList = auth.getAllUsers();
+    return ResponseEntity.ok(userList);
   }
 
   // ---- helpers cookies ----

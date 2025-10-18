@@ -5,7 +5,6 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
 import java.security.Key;
 import java.time.Instant;
 import java.util.Date;
@@ -19,8 +18,7 @@ public class JwtService {
 
   private Key signingKey() {
     // HS256 por defecto; (si deseas RS256, añade lectura de llaves PEM)
-    SecretKey key = Keys.hmacShaKeyFor(secret.getBytes());
-    return key;
+    return Keys.hmacShaKeyFor(secret.getBytes());
   }
 
   public String mintAccess(String sub, String sid) {
@@ -35,6 +33,13 @@ public class JwtService {
 
   public Jws<Claims> verify(String token) {
     return Jwts.parserBuilder().setSigningKey(signingKey()).build().parseClaimsJws(token);
+  }
+
+  public String refreshAccess(String token) {
+    Jws<Claims> claims = verify(token);
+    String sub = claims.getBody().get("sub", String.class);
+    String sid = claims.getBody().get("sid", String.class);
+    return mintAccess(sub, sid);
   }
 }
 
