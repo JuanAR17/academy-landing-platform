@@ -9,6 +9,7 @@ import java.security.Key;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -40,6 +41,19 @@ public class JwtService {
     String sub = claims.getBody().get("sub", String.class);
     String sid = claims.getBody().get("sid", String.class);
     return mintAccess(sub, sid);
+  }
+  
+  public UUID extractUserIdFromHeader(String authHeader) {
+    String token = authHeader.replace("Bearer ", "");
+    Jws<Claims> claims = verify(token);
+    String sub = claims.getBody().get("sub", String.class);
+    return UUID.fromString(sub);
+  }
+  
+  public UUID extractUserId(String token) {
+    Jws<Claims> claims = verify(token);
+    String sub = claims.getBody().get("sub", String.class);
+    return UUID.fromString(sub);
   }
 }
 

@@ -42,6 +42,19 @@ public class UserEntity {
   @Column(name = "is_admin", nullable = false)
   private boolean isAdmin = false;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "role", nullable = false)
+  private Role role = Role.STUDENT;
+
+  @Column(name = "bio", columnDefinition = "text")
+  private String bio;
+
+  @Column(name = "profile_image_url")
+  private String profileImageUrl;
+
+  @Column(name = "is_active", nullable = false)
+  private boolean isActive = true;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
 
@@ -147,5 +160,37 @@ public class UserEntity {
 
   public void setCreatedAt(Instant createdAt) {
     this.createdAt = createdAt;
+  }
+
+  public Role getRole() {
+    return role;
+  }
+
+  public void setRole(Role role) {
+    this.role = role;
+  }
+
+  public String getBio() {
+    return bio;
+  }
+
+  public void setBio(String bio) {
+    this.bio = bio;
+  }
+
+  public String getProfileImageUrl() {
+    return profileImageUrl;
+  }
+
+  public void setProfileImageUrl(String profileImageUrl) {
+    this.profileImageUrl = profileImageUrl;
+  }
+
+  public boolean isActive() {
+    return isActive;
+  }
+
+  public void setActive(boolean active) {
+    isActive = active;
   }
 }
