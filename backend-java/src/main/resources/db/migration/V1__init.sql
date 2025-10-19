@@ -12,7 +12,15 @@ CREATE TABLE IF NOT EXISTS leads(
 CREATE TABLE IF NOT EXISTS users(
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email        CITEXT UNIQUE NOT NULL,
+  username     VARCHAR(50) UNIQUE,
   password_hash TEXT NOT NULL,
+  first_name   VARCHAR(255),
+  last_name    VARCHAR(255),
+  phone        VARCHAR(50),
+  nationality  VARCHAR(100),
+  address_id   BIGINT,
+  how_did_you_find_us VARCHAR(255),
+  is_admin     BOOLEAN DEFAULT FALSE,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -31,3 +39,19 @@ CREATE TABLE IF NOT EXISTS sessions(
 CREATE INDEX IF NOT EXISTS idx_sessions_active_exp
   ON sessions(expires_at)
   WHERE is_revoked = false;
+
+-- Crear índice para búsqueda por username
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+
+-- Crear tabla addresses
+CREATE TABLE IF NOT EXISTS addresses (
+    id BIGSERIAL PRIMARY KEY,
+    address TEXT NOT NULL,
+    city VARCHAR(255),
+    state VARCHAR(255),
+    country VARCHAR(255)
+);
+
+-- Agregar foreign key constraint
+ALTER TABLE users ADD CONSTRAINT fk_users_address 
+  FOREIGN KEY (address_id) REFERENCES addresses(id);

@@ -1,12 +1,20 @@
 package com.academia.backend.dto;
 
-public class TokenOut {
-  public String access_token;
-  public String token_type = "bearer";
-  public String csrf_token;
+import java.util.UUID;
 
-  public TokenOut(String access, String csrf) {
-    this.access_token = access; this.csrf_token = csrf;
+public class TokenOut {
+  private String accessToken;
+  private String tokenType = "bearer";
+  private String csrfToken;
+  private UUID userId;
+
+  public TokenOut(String access, String csrf, UUID userId) {
+    this.accessToken = access; this.csrfToken = csrf; this.userId = userId;
   }
+
+  public String getAccessToken() { return accessToken; }
+  public String getTokenType() { return tokenType; }
+  public String getCsrfToken() { return csrfToken; }
+  public UUID getUserId() { return userId; }
 }
 

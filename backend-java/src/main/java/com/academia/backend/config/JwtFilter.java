@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -26,26 +27,28 @@ public class JwtFilter extends OncePerRequestFilter {
   private final SessionRepo sessions;
 
   public JwtFilter(JwtService jwt, SessionRepo sessions) {
-    this.jwt = jwt; this.sessions = sessions;
+    this.jwt = jwt;
+    this.sessions = sessions;
   }
 
   @Override
-  protected boolean shouldNotFilter(HttpServletRequest request) {
+  protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
     String path = request.getRequestURI();
     // Solo excluir rutas específicamente públicas
-    return path.equals("/auth/login") || 
-           path.equals("/auth/register") || 
-           path.equals("/auth/refresh") || 
-           path.equals("/auth/check") ||
-           path.equals("/auth/logout") ||
-           path.startsWith("/health") || 
-           path.startsWith("/ingest") ||
-           path.startsWith("/v3/api-docs") || 
-           path.startsWith("/swagger-ui");
+    return path.equals("/auth/login") ||
+        path.equals("/auth/register") ||
+        path.equals("/auth/refresh") ||
+        path.equals("/auth/check") ||
+        path.equals("/auth/logout") ||
+        path.startsWith("/health") ||
+        path.startsWith("/ingest") ||
+        path.startsWith("/v3/api-docs") ||
+        path.startsWith("/swagger-ui");
   }
 
   @Override
-  protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+  protected void doFilterInternal(@NonNull HttpServletRequest req, @NonNull HttpServletResponse res,
+      @NonNull FilterChain chain)
       throws ServletException, IOException {
     String h = req.getHeader("Authorization");
     if (h != null && h.startsWith("Bearer ")) {
@@ -61,10 +64,16 @@ public class JwtFilter extends OncePerRequestFilter {
           Authentication auth = new UsernamePasswordAuthenticationToken(
               c.get("sub", String.class), null, List.of(new SimpleGrantedAuthority("USER")));
           SecurityContextHolder.getContext().setAuthentication(auth);
+
+          // Auto-refresh: generate new access token with extended expiration
+          String newToken = jwt.refreshAccess(token);
+          res.setHeader("X-New-Access-Token", newToken);
         }
-      } catch (Exception ignored) {}
+      } catch (Exception ignored) {
+        // Ignored: if JWT parsing or session validation fails, continue without
+        // authentication
+      }
     }
     chain.doFilter(req, res);
   }
 }
-
