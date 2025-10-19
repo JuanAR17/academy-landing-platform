@@ -18235,7 +18235,7 @@
   },
   {
     "id": 5221,
-    "name": "Asuncion",
+    "name": "Asunción",
     "country_code": "PY",
     "country_id": 172
   },
@@ -18379,7 +18379,7 @@
   },
   {
     "id": 3687,
-    "name": "Huanuco",
+    "name": "Huánuco",
     "country_code": "PE",
     "country_id": 173
   },
@@ -18781,7 +18781,7 @@
   },
   {
     "id": 1317,
-    "name": "La Union",
+    "name": "La Unión",
     "country_code": "PH",
     "country_id": 174
   },
@@ -19345,7 +19345,7 @@
   },
   {
     "id": 5076,
-    "name": "Bayamon",
+    "name": "Bayamón",
     "country_code": "PR",
     "country_id": 178
   },
@@ -23215,7 +23215,7 @@
   },
   {
     "id": 5325,
-    "name": "Andalusia",
+    "name": "Andalucía",
     "country_code": "ES",
     "country_id": 207
   },
@@ -23227,7 +23227,7 @@
   },
   {
     "id": 5326,
-    "name": "Aragon",
+    "name": "Aragón",
     "country_code": "ES",
     "country_id": 207
   },
@@ -23251,7 +23251,7 @@
   },
   {
     "id": 5335,
-    "name": "Balearic Islands",
+    "name": "Islas Baleares",
     "country_code": "ES",
     "country_id": 207
   },
@@ -23263,7 +23263,7 @@
   },
   {
     "id": 5332,
-    "name": "Basque Country",
+    "name": "País Vasco",
     "country_code": "ES",
     "country_id": 207
   },
@@ -23293,7 +23293,7 @@
   },
   {
     "id": 5222,
-    "name": "Canary Islands",
+    "name": "Islas Canarias",
     "country_code": "ES",
     "country_id": 207
   },
@@ -23311,7 +23311,7 @@
   },
   {
     "id": 5329,
-    "name": "Castile and Leon",
+    "name": "Castilla y León",
     "country_code": "ES",
     "country_id": 207
   },
@@ -23323,7 +23323,7 @@
   },
   {
     "id": 5331,
-    "name": "Catalonia",
+    "name": "Cataluña",
     "country_code": "ES",
     "country_id": 207
   },
@@ -23341,7 +23341,7 @@
   },
   {
     "id": 5337,
-    "name": "Community of Madrid",
+    "name": "Comunidad de Madrid",
     "country_code": "ES",
     "country_id": 207
   },
@@ -23479,7 +23479,7 @@
   },
   {
     "id": 5339,
-    "name": "Navarre",
+    "name": "Navarra",
     "country_code": "ES",
     "country_id": 207
   },
@@ -28831,7 +28831,7 @@
   },
   {
     "id": 1411,
-    "name": "Hawaii",
+    "name": "Hawái",
     "country_code": "US",
     "country_id": 233
   },
@@ -28873,7 +28873,7 @@
   },
   {
     "id": 1457,
-    "name": "Louisiana",
+    "name": "Luisiana",
     "country_code": "US",
     "country_id": 233
   },
@@ -28897,7 +28897,7 @@
   },
   {
     "id": 1426,
-    "name": "Michigan",
+    "name": "Míchigan",
     "country_code": "US",
     "country_id": 233
   },
@@ -28909,13 +28909,13 @@
   },
   {
     "id": 1430,
-    "name": "Mississippi",
+    "name": "Misisipi",
     "country_code": "US",
     "country_id": 233
   },
   {
     "id": 1451,
-    "name": "Missouri",
+    "name": "Misuri",
     "country_code": "US",
     "country_id": 233
   },
@@ -28939,37 +28939,37 @@
   },
   {
     "id": 1404,
-    "name": "New Hampshire",
+    "name": "Nuevo Hampshire",
     "country_code": "US",
     "country_id": 233
   },
   {
     "id": 1417,
-    "name": "New Jersey",
+    "name": "Nueva Jersey",
     "country_code": "US",
     "country_id": 233
   },
   {
     "id": 1423,
-    "name": "New Mexico",
+    "name": "Nuevo México",
     "country_code": "US",
     "country_id": 233
   },
   {
     "id": 1452,
-    "name": "New York",
+    "name": "Nueva York",
     "country_code": "US",
     "country_id": 233
   },
   {
     "id": 1447,
-    "name": "North Carolina",
+    "name": "Carolina del Norte",
     "country_code": "US",
     "country_id": 233
   },
   {
     "id": 1418,
-    "name": "North Dakota",
+    "name": "Dakota del Norte",
     "country_code": "US",
     "country_id": 233
   },
@@ -28993,13 +28993,13 @@
   },
   {
     "id": 1415,
-    "name": "Oregon",
+    "name": "Oregón",
     "country_code": "US",
     "country_id": 233
   },
   {
     "id": 1422,
-    "name": "Pennsylvania",
+    "name": "Pensilvania",
     "country_code": "US",
     "country_id": 233
   },
@@ -29017,13 +29017,13 @@
   },
   {
     "id": 1443,
-    "name": "South Carolina",
+    "name": "Carolina del Sur",
     "country_code": "US",
     "country_id": 233
   },
   {
     "id": 1445,
-    "name": "South Dakota",
+    "name": "Dakota del Sur",
     "country_code": "US",
     "country_id": 233
   },
@@ -29077,7 +29077,7 @@
   },
   {
     "id": 1429,
-    "name": "West Virginia",
+    "name": "Virginia Occidental",
     "country_code": "US",
     "country_id": 233
   },
