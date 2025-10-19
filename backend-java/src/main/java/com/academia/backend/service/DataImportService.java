@@ -15,13 +15,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class DataImportService implements CommandLineRunner {
@@ -37,23 +37,28 @@ public class DataImportService implements CommandLineRunner {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    // Tamaño de lote para procesamiento
+    private static final int BATCH_SIZE = 3000;
+
     @Override
-    @Transactional
     public void run(String... args) throws Exception {
-        // Solo importar si no hay datos
-        if (countryRepo.count() == 0) {
-            System.out.println("=== INICIANDO IMPORTACIÓN DE DATOS DE UBICACIONES ===");
-            long startTime = System.currentTimeMillis();
-            importData();
-            long endTime = System.currentTimeMillis();
-            System.out.println("=== IMPORTACIÓN COMPLETADA EN " + (endTime - startTime) + "ms ===");
-        } else {
-            System.out.println("Los datos de ubicaciones ya existen en la base de datos. Saltando importación.");
-        }
+        // Importar siempre en desarrollo
+        System.out.println("=== INICIANDO IMPORTACIÓN DE DATOS DE UBICACIONES ===");
+        long startTime = System.currentTimeMillis();
+        importData();
+        long endTime = System.currentTimeMillis();
+        System.out.println("=== IMPORTACIÓN COMPLETADA EN " + (endTime - startTime) + "ms ===");
     }
 
     private void importData() throws IOException {
         System.out.println("Cargando datos desde archivos JSON...");
+
+        // Verificar si ya hay datos
+        long countryCount = countryRepo.count();
+        if (countryCount > 0) {
+            System.out.println("Ya existen " + countryCount + " países en la base de datos. Saltando importación.");
+            return;
+        }
 
         // Importar países
         System.out.println("Importando países...");
@@ -91,48 +96,177 @@ public class DataImportService implements CommandLineRunner {
     }
 
     private Map<Integer, Country> importCountries(List<CountryJsonDto> countriesJson) {
-        List<Country> countries = countriesJson.stream()
-            .map(dto -> {
+        System.out.println("Procesando países en lotes de " + BATCH_SIZE + "...");
+        Map<Integer, Country> countriesMap = new HashMap<>();
+
+        // Primero, obtener países existentes
+        List<Country> existingCountries = countryRepo.findAll();
+        boolean hasExistingData = !existingCountries.isEmpty();
+        
+        for (Country country : existingCountries) {
+            countriesMap.put(country.getId().intValue(), country);
+        }
+
+        List<Country> countriesToSave = new ArrayList<>();
+        int processed = 0;
+
+        for (CountryJsonDto dto : countriesJson) {
+            // Si no hay datos existentes, saltamos la verificación
+            boolean shouldAdd = !hasExistingData || !countriesMap.containsKey(dto.getId());
+            
+            if (shouldAdd) {
                 Country country = new Country();
                 country.setId(Long.valueOf(dto.getId()));
                 country.setName(dto.getName());
                 country.setPhoneCode("+" + dto.getPhonecode());
-                return country;
-            })
-            .collect(Collectors.toList());
+                countriesToSave.add(country);
 
-        List<Country> savedCountries = countryRepo.saveAll(countries);
-        return savedCountries.stream()
-            .collect(Collectors.toMap(country -> country.getId().intValue(), country -> country));
-    }    private Map<Integer, State> importStates(List<StateJsonDto> statesJson, Map<Integer, Country> countriesMap) {
-        List<State> states = statesJson.stream()
-            .map(dto -> {
+                // Guardar en lotes
+                if (countriesToSave.size() >= BATCH_SIZE) {
+                    List<Country> savedBatch = countryRepo.saveAll(countriesToSave);
+                    for (Country saved : savedBatch) {
+                        countriesMap.put(saved.getId().intValue(), saved);
+                    }
+                    processed += countriesToSave.size();
+                    System.out.println("Países procesados: " + processed + "/" + countriesJson.size());
+                    countriesToSave.clear();
+                }
+            }
+        }
+
+        // Guardar el último lote
+        if (!countriesToSave.isEmpty()) {
+            List<Country> savedBatch = countryRepo.saveAll(countriesToSave);
+            for (Country saved : savedBatch) {
+                countriesMap.put(saved.getId().intValue(), saved);
+            }
+            processed += countriesToSave.size();
+            System.out.println("Países procesados: " + processed + "/" + countriesJson.size());
+        }
+
+        return countriesMap;
+    }
+
+    private Map<Integer, State> importStates(List<StateJsonDto> statesJson, Map<Integer, Country> countriesMap) {
+        System.out.println("Procesando estados en lotes de " + BATCH_SIZE + "...");
+        Map<Integer, State> statesMap = new HashMap<>();
+
+        // Primero, obtener estados existentes
+        List<State> existingStates = stateRepo.findAll();
+        boolean hasExistingData = !existingStates.isEmpty();
+        
+        for (State state : existingStates) {
+            statesMap.put(state.getId().intValue(), state);
+        }
+
+        List<State> statesToSave = new ArrayList<>();
+        int processed = 0;
+        int skipped = 0;
+
+        for (StateJsonDto dto : statesJson) {
+            // Si no hay datos existentes, saltamos la verificación
+            boolean shouldAdd = !hasExistingData || !statesMap.containsKey(dto.getId());
+            
+            if (shouldAdd) {
+                Country country = countriesMap.get(dto.getCountry_id());
+
+                if (country == null) {
+                    skipped++;
+                    continue;
+                }
+
                 State state = new State();
                 state.setId(Long.valueOf(dto.getId()));
                 state.setName(dto.getName());
-                state.setCountry(countriesMap.get(dto.getCountry_id()));
-                return state;
-            })
-            .collect(Collectors.toList());
+                state.setCountry(country);
+                statesToSave.add(state);
 
-        // Guardar en lotes para mejor rendimiento
-        List<State> savedStates = stateRepo.saveAll(states);
-        return savedStates.stream()
-            .collect(Collectors.toMap(state -> state.getId().intValue(), state -> state));
+                // Guardar en lotes
+                if (statesToSave.size() >= BATCH_SIZE) {
+                    List<State> savedBatch = stateRepo.saveAll(statesToSave);
+                    for (State saved : savedBatch) {
+                        statesMap.put(saved.getId().intValue(), saved);
+                    }
+                    processed += statesToSave.size();
+                    System.out.println("Estados procesados: " + processed + "/" + statesJson.size() +
+                            " (Omitidos: " + skipped + ")");
+                    statesToSave.clear();
+                }
+            }
+        }
+
+        // Guardar el último lote
+        if (!statesToSave.isEmpty()) {
+            List<State> savedBatch = stateRepo.saveAll(statesToSave);
+            for (State saved : savedBatch) {
+                statesMap.put(saved.getId().intValue(), saved);
+            }
+            processed += statesToSave.size();
+            System.out.println("Estados procesados: " + processed + "/" + statesJson.size() +
+                    " (Omitidos: " + skipped + ")");
+        }
+
+        if (skipped > 0) {
+            System.out.println("ADVERTENCIA: Se omitieron " + skipped + " estados debido a países faltantes");
+        }
+
+        return statesMap;
     }
 
     private void importCities(List<CityJsonDto> citiesJson, Map<Integer, State> statesMap) {
-        List<City> cities = citiesJson.stream()
-            .map(dto -> {
-                City city = new City();
-                city.setId(Long.valueOf(dto.getId()));
-                city.setName(dto.getName());
-                city.setState(statesMap.get(dto.getState_id()));
-                return city;
-            })
-            .collect(Collectors.toList());
+        System.out.println("Procesando ciudades en lotes de " + BATCH_SIZE + "...");
 
-        // Guardar en lotes para mejor rendimiento
-        cityRepo.saveAll(cities);
+        // Verificar si hay datos existentes
+        long existingCount = cityRepo.count();
+        boolean hasExistingData = existingCount > 0;
+        
+        if (hasExistingData) {
+            System.out.println("Ya existen " + existingCount + " ciudades. Saltando importación.");
+            return;
+        }
+
+        List<City> citiesToSave = new ArrayList<>();
+        int processed = 0;
+        int skipped = 0;
+
+        for (CityJsonDto dto : citiesJson) {
+            State state = statesMap.get(dto.getState_id());
+
+            if (state == null) {
+                skipped++;
+                continue;
+            }
+
+            City city = new City();
+            city.setId(Long.valueOf(dto.getId()));
+            city.setName(dto.getName());
+            city.setState(state);
+            citiesToSave.add(city);
+
+            // Guardar en lotes
+            if (citiesToSave.size() >= BATCH_SIZE) {
+                cityRepo.saveAll(citiesToSave);
+                cityRepo.flush(); // Forzar escritura a BD
+                processed += citiesToSave.size();
+                System.out.println("Ciudades procesadas: " + processed + "/" + citiesJson.size() +
+                        " (Omitidas: " + skipped + ")");
+                citiesToSave.clear();
+            }
+        }
+
+        // Guardar el último lote
+        if (!citiesToSave.isEmpty()) {
+            cityRepo.saveAll(citiesToSave);
+            cityRepo.flush(); // Forzar escritura a BD
+            processed += citiesToSave.size();
+            System.out.println("Ciudades procesadas: " + processed + "/" + citiesJson.size() +
+                    " (Omitidas: " + skipped + ")");
+        }
+
+        if (skipped > 0) {
+            System.out.println("ADVERTENCIA: Se omitieron " + skipped + " ciudades debido a estados faltantes");
+        }
+        
+        System.out.println("Ciudades importadas exitosamente");
     }
 }

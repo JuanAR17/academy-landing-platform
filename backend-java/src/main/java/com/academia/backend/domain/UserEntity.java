@@ -8,6 +8,7 @@ import java.util.UUID;
 @Table(name = "users")
 public class UserEntity {
   @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
   @Column(columnDefinition = "uuid")
   private UUID id;
 
@@ -20,24 +21,24 @@ public class UserEntity {
   @Column(name = "password_hash", nullable = false, columnDefinition = "text")
   private String passwordHash;
 
-  @Column(name = "nombre", nullable = false)
-  private String nombre;
+  @Column(name = "first_name", nullable = false)
+  private String firstName;
 
-  @Column(name = "apellido")
-  private String apellido;
+  @Column(name = "last_name")
+  private String lastName;
 
-  @Column(name = "telefono")
-  private String telefono;
+  @Column(name = "phone")
+  private String phone;
 
-  @Column(name = "nacionalidad")
-  private String nacionalidad;
+  @Column(name = "nationality")
+  private String nationality;
 
   @OneToOne(cascade = CascadeType.ALL)
   @JoinColumn(name = "address_id")
   private Address address;
 
-  @Column(name = "donde_nos_viste")
-  private String dondeNosViste;
+  @Column(name = "how_did_you_find_us")
+  private String howDidYouFindUs;
 
   @Column(name = "is_admin", nullable = false)
   private boolean isAdmin = false;
@@ -98,36 +99,36 @@ public class UserEntity {
     this.passwordHash = passwordHash;
   }
 
-  public String getNombre() {
-    return nombre;
+  public String getFirstName() {
+    return firstName;
   }
 
-  public void setNombre(String nombre) {
-    this.nombre = nombre;
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
   }
 
-  public String getApellido() {
-    return apellido;
+  public String getLastName() {
+    return lastName;
   }
 
-  public void setApellido(String apellido) {
-    this.apellido = apellido;
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
   }
 
-  public String getTelefono() {
-    return telefono;
+  public String getPhone() {
+    return phone;
   }
 
-  public void setTelefono(String telefono) {
-    this.telefono = telefono;
+  public void setPhone(String phone) {
+    this.phone = phone;
   }
 
-  public String getNacionalidad() {
-    return nacionalidad;
+  public String getNationality() {
+    return nationality;
   }
 
-  public void setNacionalidad(String nacionalidad) {
-    this.nacionalidad = nacionalidad;
+  public void setNationality(String nationality) {
+    this.nationality = nationality;
   }
 
   public Address getAddress() {
@@ -138,12 +139,12 @@ public class UserEntity {
     this.address = address;
   }
 
-  public String getDondeNosViste() {
-    return dondeNosViste;
+  public String getHowDidYouFindUs() {
+    return howDidYouFindUs;
   }
 
-  public void setDondeNosViste(String dondeNosViste) {
-    this.dondeNosViste = dondeNosViste;
+  public void setHowDidYouFindUs(String howDidYouFindUs) {
+    this.howDidYouFindUs = howDidYouFindUs;
   }
 
   public boolean isAdmin() {

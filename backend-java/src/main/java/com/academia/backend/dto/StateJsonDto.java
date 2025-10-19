@@ -1,8 +1,13 @@
 package com.academia.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class StateJsonDto {
     private int id;
     private String name;
+    @JsonProperty("country_id")
     private int country_id;
 
     // Getters and setters

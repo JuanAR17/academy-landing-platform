@@ -9,14 +9,17 @@ public class Address {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String direccion;
+    @Column(name = "address", nullable = false)
+    private String address;
 
-    private String ciudad;
+    @Column(name = "city")
+    private String city;
 
-    private String departamento;
+    @Column(name = "state")
+    private String state;
 
-    private String pais;
+    @Column(name = "country")
+    private String country;
 
     @OneToOne(mappedBy = "address")
     private UserEntity user;
@@ -30,36 +33,36 @@ public class Address {
         this.id = id;
     }
 
-    public String getDireccion() {
-        return direccion;
+    public String getAddress() {
+        return address;
     }
 
-    public void setDireccion(String direccion) {
-        this.direccion = direccion;
+    public void setAddress(String address) {
+        this.address = address;
     }
 
-    public String getCiudad() {
-        return ciudad;
+    public String getCity() {
+        return city;
     }
 
-    public void setCiudad(String ciudad) {
-        this.ciudad = ciudad;
+    public void setCity(String city) {
+        this.city = city;
     }
 
-    public String getDepartamento() {
-        return departamento;
+    public String getState() {
+        return state;
     }
 
-    public void setDepartamento(String departamento) {
-        this.departamento = departamento;
+    public void setState(String state) {
+        this.state = state;
     }
 
-    public String getPais() {
-        return pais;
+    public String getCountry() {
+        return country;
     }
 
-    public void setPais(String pais) {
-        this.pais = pais;
+    public void setCountry(String country) {
+        this.country = country;
     }
 
     public UserEntity getUser() {

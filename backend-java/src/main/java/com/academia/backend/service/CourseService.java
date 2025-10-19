@@ -19,6 +19,18 @@ import java.util.UUID;
 @Transactional
 public class CourseService {
 
+    private static final String MODULE_COURSE = "Course";
+    private static final String ACTION_CREATE_COURSE = "create_course";
+    private static final String ACTION_UPDATE_COURSE = "update_course";
+    private static final String ACTION_PUBLISH_COURSE = "publish_course";
+    private static final String ACTION_DELETE_COURSE = "delete_course";
+
+    private static final String ERROR_COURSE_NOT_FOUND = "Curso no encontrado";
+    private static final String ERROR_USER_NOT_FOUND = "Usuario no encontrado";
+    private static final String ERROR_NOT_AUTHORIZED_UPDATE = "No autorizado para actualizar este curso";
+    private static final String ERROR_NOT_AUTHORIZED = "No autorizado";
+    private static final String ERROR_ONLY_TEACHERS_CREATE = "Solo profesores pueden crear cursos";
+
     private final CourseRepo courseRepo;
     private final UserRepo userRepo;
     private final LogService logService;
@@ -31,14 +43,15 @@ public class CourseService {
 
     // Crear curso (solo profesores)
     public CourseDto createCourse(CreateCourseIn input, UUID teacherId) {
-        logService.logInfo("Course", "create_course", "Creando nuevo curso: " + input.title(), teacherId);
+        logService.logInfo(MODULE_COURSE, ACTION_CREATE_COURSE, "Creando nuevo curso: " + input.title(), teacherId);
 
         UserEntity teacher = userRepo.findById(teacherId)
-                .orElseThrow(() -> new RuntimeException("Profesor no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
 
         if (teacher.getRole() != Role.TEACHER && teacher.getRole() != Role.ADMIN) {
-            logService.logError("Course", "create_course", "Usuario no autorizado para crear cursos", teacherId);
-            throw new RuntimeException("Solo profesores pueden crear cursos");
+            logService.logError(MODULE_COURSE, ACTION_CREATE_COURSE, "Usuario no autorizado para crear cursos",
+                    teacherId);
+            throw new IllegalArgumentException(ERROR_ONLY_TEACHERS_CREATE);
         }
 
         CourseEntity course = new CourseEntity();
@@ -65,25 +78,27 @@ public class CourseService {
         }
 
         CourseEntity saved = courseRepo.save(course);
-        logService.logInfo("Course", "create_course", "Curso creado exitosamente: " + saved.getId(), teacherId);
+        logService.logInfo(MODULE_COURSE, ACTION_CREATE_COURSE, "Curso creado exitosamente: " + saved.getId(),
+                teacherId);
 
         return toDto(saved);
     }
 
     // Actualizar curso
     public CourseDto updateCourse(UUID courseId, UpdateCourseIn input, UUID userId) {
-        logService.logInfo("Course", "update_course", "Actualizando curso: " + courseId, userId);
+        logService.logInfo(MODULE_COURSE, ACTION_UPDATE_COURSE, "Actualizando curso: " + courseId, userId);
 
         CourseEntity course = courseRepo.findById(courseId)
-                .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_COURSE_NOT_FOUND));
 
         UserEntity user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
 
         // Solo el profesor del curso o admin pueden actualizar
         if (!course.getTeacher().getId().equals(userId) && user.getRole() != Role.ADMIN) {
-            logService.logError("Course", "update_course", "Usuario no autorizado para actualizar curso", userId);
-            throw new RuntimeException("No autorizado para actualizar este curso");
+            logService.logError(MODULE_COURSE, ACTION_UPDATE_COURSE, "Usuario no autorizado para actualizar curso",
+                    userId);
+            throw new IllegalArgumentException(ERROR_NOT_AUTHORIZED_UPDATE);
         }
 
         if (input.title() != null)
@@ -114,31 +129,31 @@ public class CourseService {
             course.setLearningOutcomes(input.learningOutcomes());
 
         CourseEntity saved = courseRepo.save(course);
-        logService.logInfo("Course", "update_course", "Curso actualizado: " + courseId, userId);
+        logService.logInfo(MODULE_COURSE, ACTION_UPDATE_COURSE, "Curso actualizado: " + courseId, userId);
 
         return toDto(saved);
     }
 
     // Publicar curso
     public CourseDto publishCourse(UUID courseId, UUID userId) {
-        logService.logInfo("Course", "publish_course", "Publicando curso: " + courseId, userId);
+        logService.logInfo(MODULE_COURSE, ACTION_PUBLISH_COURSE, "Publicando curso: " + courseId, userId);
 
         CourseEntity course = courseRepo.findById(courseId)
-                .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_COURSE_NOT_FOUND));
 
         UserEntity user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
 
         if (!course.getTeacher().getId().equals(userId) && user.getRole() != Role.ADMIN) {
-            logService.logError("Course", "publish_course", "Usuario no autorizado", userId);
-            throw new RuntimeException("No autorizado");
+            logService.logError(MODULE_COURSE, ACTION_PUBLISH_COURSE, "Usuario no autorizado", userId);
+            throw new IllegalArgumentException(ERROR_NOT_AUTHORIZED);
         }
 
         course.setStatus(CourseStatus.PUBLISHED);
         course.setPublishedAt(Instant.now());
 
         CourseEntity saved = courseRepo.save(course);
-        logService.logInfo("Course", "publish_course", "Curso publicado: " + courseId, userId);
+        logService.logInfo(MODULE_COURSE, ACTION_PUBLISH_COURSE, "Curso publicado: " + courseId, userId);
 
         return toDto(saved);
     }
@@ -147,7 +162,7 @@ public class CourseService {
     @Transactional(readOnly = true)
     public CourseDto getCourseById(UUID courseId) {
         CourseEntity course = courseRepo.findById(courseId)
-                .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_COURSE_NOT_FOUND));
         return toDto(course);
     }
 
@@ -169,7 +184,7 @@ public class CourseService {
     @Transactional(readOnly = true)
     public List<CourseDto> getCoursesByTeacher(UUID teacherId) {
         UserEntity teacher = userRepo.findById(teacherId)
-                .orElseThrow(() -> new RuntimeException("Profesor no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Profesor no encontrado"));
 
         return courseRepo.findByTeacher(teacher).stream()
                 .map(this::toDto)
@@ -191,23 +206,23 @@ public class CourseService {
 
     // Eliminar curso (soft delete -> archived)
     public void deleteCourse(UUID courseId, UUID userId) {
-        logService.logInfo("Course", "delete_course", "Eliminando curso: " + courseId, userId);
+        logService.logInfo(MODULE_COURSE, ACTION_DELETE_COURSE, "Eliminando curso: " + courseId, userId);
 
         CourseEntity course = courseRepo.findById(courseId)
-                .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_COURSE_NOT_FOUND));
 
         UserEntity user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
 
         if (!course.getTeacher().getId().equals(userId) && user.getRole() != Role.ADMIN) {
-            logService.logError("Course", "delete_course", "Usuario no autorizado", userId);
-            throw new RuntimeException("No autorizado");
+            logService.logError(MODULE_COURSE, ACTION_DELETE_COURSE, "Usuario no autorizado", userId);
+            throw new IllegalArgumentException(ERROR_NOT_AUTHORIZED);
         }
 
         course.setStatus(CourseStatus.ARCHIVED);
         courseRepo.save(course);
 
-        logService.logInfo("Course", "delete_course", "Curso archivado: " + courseId, userId);
+        logService.logInfo(MODULE_COURSE, ACTION_DELETE_COURSE, "Curso archivado: " + courseId, userId);
     }
 
     // Convertir a DTO
@@ -220,8 +235,8 @@ public class CourseService {
                 course.getThumbnailUrl(),
                 course.getVideoPreviewUrl(),
                 course.getTeacher().getId(),
-                course.getTeacher().getNombre() + " "
-                        + (course.getTeacher().getApellido() != null ? course.getTeacher().getApellido() : ""),
+                course.getTeacher().getFirstName() + " "
+                        + (course.getTeacher().getLastName() != null ? course.getTeacher().getLastName() : ""),
                 course.getPrice(),
                 course.getDurationHours(),
                 course.getDifficultyLevel(),

@@ -130,52 +130,81 @@ public class AuthService {
     UserEntity user = users.findById(userId)
         .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND));
 
-    // Valida que el email no esté en uso por otro usuario
+    updateEmailIfChanged(user, updateData);
+    updateUsernameIfChanged(user, updateData);
+    updateBasicFields(user, updateData);
+    updateAddressIfProvided(user, updateData);
+    updateAdminFields(user, updateData);
+
+    users.save(user);
+  }
+
+  private void updateEmailIfChanged(UserEntity user, UserDto updateData) {
     if (updateData.getCorreo() != null && !updateData.getCorreo().equals(user.getEmail())) {
       if (users.findByEmail(updateData.getCorreo()).isPresent()) {
         throw new IllegalArgumentException(EMAIL_IN_USE);
       }
       user.setEmail(updateData.getCorreo());
     }
+  }
 
-    // Valida que el username no esté en uso por otro usuario
+  private void updateUsernameIfChanged(UserEntity user, UserDto updateData) {
     if (updateData.getUsername() != null && !updateData.getUsername().equals(user.getUsername())) {
       if (users.findByUsername(updateData.getUsername()).isPresent()) {
         throw new IllegalArgumentException(USERNAME_IN_USE);
       }
       user.setUsername(updateData.getUsername());
     }
+  }
 
-    // Actualiza otros campos si no son null
-    if (updateData.getNombre() != null)
-      user.setNombre(updateData.getNombre());
-    if (updateData.getApellido() != null)
-      user.setApellido(updateData.getApellido());
-    if (updateData.getTelefono() != null)
-      user.setTelefono(updateData.getTelefono());
-    if (updateData.getNacionalidad() != null)
-      user.setNacionalidad(updateData.getNacionalidad());
+  private void updateBasicFields(UserEntity user, UserDto updateData) {
+    if (updateData.getFirstName() != null) {
+      user.setFirstName(updateData.getFirstName());
+    }
+    if (updateData.getLastName() != null) {
+      user.setLastName(updateData.getLastName());
+    }
+    if (updateData.getPhone() != null) {
+      user.setPhone(updateData.getPhone());
+    }
+    if (updateData.getNationality() != null) {
+      user.setNationality(updateData.getNationality());
+    }
+    if (updateData.getHowDidYouFindUs() != null) {
+      user.setHowDidYouFindUs(updateData.getHowDidYouFindUs());
+    }
+  }
+
+  private void updateAddressIfProvided(UserEntity user, UserDto updateData) {
     if (updateData.getAddress() != null) {
       Address address = user.getAddress();
       if (address == null) {
         address = new Address();
         user.setAddress(address);
       }
-      if (updateData.getAddress().getDireccion() != null)
-        address.setDireccion(updateData.getAddress().getDireccion());
-      if (updateData.getAddress().getCiudad() != null)
-        address.setCiudad(updateData.getAddress().getCiudad());
-      if (updateData.getAddress().getDepartamento() != null)
-        address.setDepartamento(updateData.getAddress().getDepartamento());
-      if (updateData.getAddress().getPais() != null)
-        address.setPais(updateData.getAddress().getPais());
+      updateAddressFields(address, updateData.getAddress());
     }
-    if (updateData.getDondeNosViste() != null)
-      user.setDondeNosViste(updateData.getDondeNosViste());
-    if (updateData.getIsAdmin() != null)
-      user.setAdmin(updateData.getIsAdmin());
+  }
 
-    users.save(user);
+  private void updateAddressFields(Address address, AddressDto addressDto) {
+    if (addressDto.getAddress() != null) {
+      address.setAddress(addressDto.getAddress());
+    }
+    if (addressDto.getCity() != null) {
+      address.setCity(addressDto.getCity());
+    }
+    if (addressDto.getState() != null) {
+      address.setState(addressDto.getState());
+    }
+    if (addressDto.getCountry() != null) {
+      address.setCountry(addressDto.getCountry());
+    }
+  }
+
+  private void updateAdminFields(UserEntity user, UserDto updateData) {
+    if (updateData.getIsAdmin() != null) {
+      user.setAdmin(updateData.getIsAdmin());
+    }
   }
 
   public UserDto getUserInfo(UUID userId) {
@@ -185,19 +214,19 @@ public class AuthService {
     dto.id = user.getId();
     dto.setCorreo(user.getEmail());
     dto.setUsername(user.getUsername());
-    dto.setNombre(user.getNombre());
-    dto.setApellido(user.getApellido());
-    dto.setTelefono(user.getTelefono());
-    dto.setNacionalidad(user.getNacionalidad());
+    dto.setFirstName(user.getFirstName());
+    dto.setLastName(user.getLastName());
+    dto.setPhone(user.getPhone());
+    dto.setNationality(user.getNationality());
     if (user.getAddress() != null) {
       AddressDto addressDto = new AddressDto();
-      addressDto.setDireccion(user.getAddress().getDireccion());
-      addressDto.setCiudad(user.getAddress().getCiudad());
-      addressDto.setDepartamento(user.getAddress().getDepartamento());
-      addressDto.setPais(user.getAddress().getPais());
+      addressDto.setAddress(user.getAddress().getAddress());
+      addressDto.setCity(user.getAddress().getCity());
+      addressDto.setState(user.getAddress().getState());
+      addressDto.setCountry(user.getAddress().getCountry());
       dto.setAddress(addressDto);
     }
-    dto.setDondeNosViste(user.getDondeNosViste());
+    dto.setHowDidYouFindUs(user.getHowDidYouFindUs());
     dto.setIsAdmin(user.isAdmin());
     dto.createdAt = user.getCreatedAt();
     return dto;
@@ -223,19 +252,19 @@ public class AuthService {
           dto.id = user.getId();
           dto.setCorreo(user.getEmail());
           dto.setUsername(user.getUsername());
-          dto.setNombre(user.getNombre());
-          dto.setApellido(user.getApellido());
-          dto.setTelefono(user.getTelefono());
-          dto.setNacionalidad(user.getNacionalidad());
+          dto.setFirstName(user.getFirstName());
+          dto.setLastName(user.getLastName());
+          dto.setPhone(user.getPhone());
+          dto.setNationality(user.getNationality());
           if (user.getAddress() != null) {
             AddressDto addressDto = new AddressDto();
-            addressDto.setDireccion(user.getAddress().getDireccion());
-            addressDto.setCiudad(user.getAddress().getCiudad());
-            addressDto.setDepartamento(user.getAddress().getDepartamento());
-            addressDto.setPais(user.getAddress().getPais());
+            addressDto.setAddress(user.getAddress().getAddress());
+            addressDto.setCity(user.getAddress().getCity());
+            addressDto.setState(user.getAddress().getState());
+            addressDto.setCountry(user.getAddress().getCountry());
             dto.setAddress(addressDto);
           }
-          dto.setDondeNosViste(user.getDondeNosViste());
+          dto.setHowDidYouFindUs(user.getHowDidYouFindUs());
           dto.setIsAdmin(user.isAdmin());
           dto.createdAt = user.getCreatedAt();
           return dto;

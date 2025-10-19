@@ -100,19 +100,19 @@ public class AuthController {
     user.setEmail(in.getCorreo());
     user.setUsername(in.getUsername());
     user.setPasswordHash(auth.hashPassword(in.contrasena));
-    user.setNombre(in.getNombre());
-    user.setApellido(in.getApellido());
-    user.setTelefono(in.getTelefono());
-    user.setNacionalidad(in.getNacionalidad());
+    user.setFirstName(in.getFirstName());
+    user.setLastName(in.getLastName());
+    user.setPhone(in.getPhone());
+    user.setNationality(in.getNationality());
     if (in.getAddress() != null) {
       Address address = new Address();
-      address.setDireccion(in.getAddress().getDireccion());
-      address.setCiudad(in.getAddress().getCiudad());
-      address.setDepartamento(in.getAddress().getDepartamento());
-      address.setPais(in.getAddress().getPais());
+      address.setAddress(in.getAddress().getAddress());
+      address.setCity(in.getAddress().getCity());
+      address.setState(in.getAddress().getState());
+      address.setCountry(in.getAddress().getCountry());
       user.setAddress(address);
     }
-    user.setDondeNosViste(in.getDondeNosViste());
+    user.setHowDidYouFindUs(in.getHowDidYouFindUs());
     user = users.save(user);
 
     // Crea una sesión automáticamente
@@ -236,53 +236,65 @@ public class AuthController {
   @GetMapping("/user")
   @Operation(summary = "Obtener información de usuario: propio si no es admin, o por ID/email/username si es admin")
   public ResponseEntity<Object> getUserInfo(@RequestParam(required = false) String identifier) {
+    UUID userId = validateAuthenticationAndGetUserId();
+    UserDto currentUser = auth.getUserInfo(userId);
+
+    if (identifier == null || identifier.trim().isEmpty()) {
+      return handleCurrentUserInfo(currentUser);
+    } else {
+      return handleOtherUserInfo(identifier, currentUser);
+    }
+  }
+
+  private UUID validateAuthenticationAndGetUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null || !authentication.isAuthenticated()) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
     }
 
     String userIdStr = authentication.getName();
-    UUID userId;
     try {
-      userId = UUID.fromString(userIdStr);
+      return UUID.fromString(userIdStr);
     } catch (IllegalArgumentException e) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido");
     }
+  }
 
-    // Obtener info del usuario autenticado para verificar si es admin
-    UserDto currentUser = auth.getUserInfo(userId);
-
-    if (identifier == null || identifier.trim().isEmpty()) {
-      // Sin identifier: devolver info del autenticado
-      if (!Boolean.TRUE.equals(currentUser.getIsAdmin())) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("correo", currentUser.getCorreo());
-        response.put("username", currentUser.getUsername());
-        response.put("nombre", currentUser.getNombre());
-        response.put("apellido", currentUser.getApellido());
-        response.put("telefono", currentUser.getTelefono());
-        response.put("nacionalidad", currentUser.getNacionalidad());
-        response.put("direccion", currentUser.getAddress() != null ? currentUser.getAddress().getDireccion() : null);
-        response.put("ciudad", currentUser.getAddress() != null ? currentUser.getAddress().getCiudad() : null);
-        response.put("departamento", currentUser.getAddress() != null ? currentUser.getAddress().getDepartamento() : null);
-        response.put("pais", currentUser.getAddress() != null ? currentUser.getAddress().getPais() : null);
-        response.put("dondeNosViste", currentUser.getDondeNosViste());
-        return ResponseEntity.ok(response);
-      } else {
-        return ResponseEntity.ok(currentUser);
-      }
+  private ResponseEntity<Object> handleCurrentUserInfo(UserDto currentUser) {
+    if (!Boolean.TRUE.equals(currentUser.getIsAdmin())) {
+      return ResponseEntity.ok(buildUserResponse(currentUser));
     } else {
-      // Con identifier: solo admins pueden buscar otros usuarios
-      if (!Boolean.TRUE.equals(currentUser.getIsAdmin())) {
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo administradores pueden buscar otros usuarios");
-      }
-      try {
-        UserDto info = auth.getUserByIdentifier(identifier);
-        return ResponseEntity.ok(info);
-      } catch (RuntimeException e) {
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-      }
+      return ResponseEntity.ok(currentUser);
     }
+  }
+
+  private ResponseEntity<Object> handleOtherUserInfo(String identifier, UserDto currentUser) {
+    if (!Boolean.TRUE.equals(currentUser.getIsAdmin())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo administradores pueden buscar otros usuarios");
+    }
+
+    try {
+      UserDto info = auth.getUserByIdentifier(identifier);
+      return ResponseEntity.ok(info);
+    } catch (RuntimeException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+  }
+
+  private Map<String, Object> buildUserResponse(UserDto user) {
+    Map<String, Object> response = new HashMap<>();
+    response.put("correo", user.getCorreo());
+    response.put("username", user.getUsername());
+    response.put("firstName", user.getFirstName());
+    response.put("lastName", user.getLastName());
+    response.put("phone", user.getPhone());
+    response.put("nationality", user.getNationality());
+    response.put("address", user.getAddress() != null ? user.getAddress().getAddress() : null);
+    response.put("city", user.getAddress() != null ? user.getAddress().getCity() : null);
+    response.put("state", user.getAddress() != null ? user.getAddress().getState() : null);
+    response.put("country", user.getAddress() != null ? user.getAddress().getCountry() : null);
+    response.put("howDidYouFindUs", user.getHowDidYouFindUs());
+    return response;
   }
 
   @GetMapping("/users")

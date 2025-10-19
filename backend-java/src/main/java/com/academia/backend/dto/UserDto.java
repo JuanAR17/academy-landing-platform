@@ -17,17 +17,17 @@ public class UserDto {
     @Size(min = 3, max = 50, message = "El nombre de usuario debe tener entre 3 y 50 caracteres")
     protected String username;
 
-    protected String nombre;
+    protected String firstName;
 
-    protected String apellido;
+    protected String lastName;
 
-    protected String telefono;
+    protected String phone;
 
-    protected String nacionalidad;
+    protected String nationality;
 
     protected AddressDto address;
 
-    protected String dondeNosViste;
+    protected String howDidYouFindUs;
 
     protected Boolean isAdmin;
 
@@ -51,36 +51,36 @@ public class UserDto {
         this.username = username;
     }
 
-    public String getNombre() {
-        return nombre;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
-    public String getApellido() {
-        return apellido;
+    public String getLastName() {
+        return lastName;
     }
 
-    public void setApellido(String apellido) {
-        this.apellido = apellido;
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
-    public String getTelefono() {
-        return telefono;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setTelefono(String telefono) {
-        this.telefono = telefono;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
-    public String getNacionalidad() {
-        return nacionalidad;
+    public String getNationality() {
+        return nationality;
     }
 
-    public void setNacionalidad(String nacionalidad) {
-        this.nacionalidad = nacionalidad;
+    public void setNationality(String nationality) {
+        this.nationality = nationality;
     }
 
     public AddressDto getAddress() {
@@ -91,12 +91,12 @@ public class UserDto {
         this.address = address;
     }
 
-    public String getDondeNosViste() {
-        return dondeNosViste;
+    public String getHowDidYouFindUs() {
+        return howDidYouFindUs;
     }
 
-    public void setDondeNosViste(String dondeNosViste) {
-        this.dondeNosViste = dondeNosViste;
+    public void setHowDidYouFindUs(String howDidYouFindUs) {
+        this.howDidYouFindUs = howDidYouFindUs;
     }
 
     public Boolean getIsAdmin() {

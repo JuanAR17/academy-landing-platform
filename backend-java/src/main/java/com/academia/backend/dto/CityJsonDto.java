@@ -1,5 +1,8 @@
 package com.academia.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CityJsonDto {
     private int id;
     private String name;

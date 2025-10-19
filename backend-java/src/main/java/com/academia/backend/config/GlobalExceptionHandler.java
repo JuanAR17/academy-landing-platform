@@ -21,18 +21,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         String message = ex.getReason();
 
         return ResponseEntity.status(status)
-            .body(Map.of(ERROR_KEY, message != null ? message : "Error desconocido"));
+                .body(Map.of(ERROR_KEY, message != null ? message : "Error desconocido"));
     }
 
     @ExceptionHandler(ExpiredJwtException.class)
     public ResponseEntity<Map<String, String>> handleExpiredJwtException(ExpiredJwtException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(Map.of(ERROR_KEY, "Token expirado"));
+                .body(Map.of(ERROR_KEY, "Token expirado"));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
+        logger.error("Error interno del servidor", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(Map.of(ERROR_KEY, "Error interno del servidor"));
+                .body(Map.of(ERROR_KEY, "Error interno del servidor"));
     }
 }

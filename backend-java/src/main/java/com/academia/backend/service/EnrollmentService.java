@@ -21,6 +21,24 @@ import java.util.UUID;
 @Transactional
 public class EnrollmentService {
 
+    // Constants for logging
+    private static final String MODULE_ENROLLMENT = "Enrollment";
+    private static final String ACTION_CREATE_ENROLLMENT = "create_enrollment";
+    private static final String ACTION_UPDATE_ENROLLMENT = "update_enrollment";
+    private static final String ACTION_CANCEL_ENROLLMENT = "cancel_enrollment";
+    private static final String ACTION_ACTIVATE_ENROLLMENT = "activate_enrollment";
+
+    // Constants for error messages
+    private static final String ERROR_STUDENT_NOT_FOUND = "Estudiante no encontrado";
+    private static final String ERROR_COURSE_NOT_FOUND = "Curso no encontrado";
+    private static final String ERROR_ENROLLMENT_NOT_FOUND = "Matrícula no encontrada";
+    private static final String ERROR_ONLY_STUDENTS_ENROLL = "Solo estudiantes pueden matricularse en cursos";
+    private static final String ERROR_COURSE_NOT_AVAILABLE = "El curso no está disponible para matrícula";
+    private static final String ERROR_ALREADY_ENROLLED = "Ya estás matriculado en este curso";
+    private static final String ERROR_COURSE_FULL = "El curso ha alcanzado el máximo de estudiantes";
+    private static final String ERROR_NOT_AUTHORIZED_UPDATE = "No autorizado para actualizar esta matrícula";
+    private static final String ERROR_NOT_AUTHORIZED = "No autorizado";
+
     private final EnrollmentRepo enrollmentRepo;
     private final CourseRepo courseRepo;
     private final UserRepo userRepo;
@@ -36,34 +54,34 @@ public class EnrollmentService {
 
     // Crear matrícula (estudiante se inscribe en curso)
     public EnrollmentDto createEnrollment(CreateEnrollmentIn input, UUID studentId) {
-        logService.logInfo("Enrollment", "create_enrollment",
+        logService.logInfo(MODULE_ENROLLMENT, ACTION_CREATE_ENROLLMENT,
                 "Creando matrícula para curso: " + input.courseId(), studentId);
 
         UserEntity student = userRepo.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_STUDENT_NOT_FOUND));
 
         if (student.getRole() != Role.STUDENT && student.getRole() != Role.ADMIN) {
-            logService.logError("Enrollment", "create_enrollment",
+            logService.logError(MODULE_ENROLLMENT, ACTION_CREATE_ENROLLMENT,
                     "Solo estudiantes pueden matricularse", studentId);
-            throw new RuntimeException("Solo estudiantes pueden matricularse en cursos");
+            throw new IllegalArgumentException(ERROR_ONLY_STUDENTS_ENROLL);
         }
 
         CourseEntity course = courseRepo.findById(input.courseId())
-                .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_COURSE_NOT_FOUND));
 
         if (course.getStatus() != CourseStatus.PUBLISHED) {
-            throw new RuntimeException("El curso no está disponible para matrícula");
+            throw new IllegalArgumentException(ERROR_COURSE_NOT_AVAILABLE);
         }
 
         // Verificar si ya está matriculado
         if (enrollmentRepo.existsByStudentAndCourseAndStatus(student, course, EnrollmentStatus.ACTIVE)) {
-            throw new RuntimeException("Ya estás matriculado en este curso");
+            throw new IllegalArgumentException(ERROR_ALREADY_ENROLLED);
         }
 
         // Verificar cupo disponible
         if (course.getMaxStudents() != null &&
                 course.getCurrentStudents() >= course.getMaxStudents()) {
-            throw new RuntimeException("El curso ha alcanzado el máximo de estudiantes");
+            throw new IllegalArgumentException(ERROR_COURSE_FULL);
         }
 
         Enrollment enrollment = new Enrollment();
@@ -74,7 +92,7 @@ public class EnrollmentService {
         enrollment.setAmountPaid(BigDecimal.ZERO);
 
         Enrollment saved = enrollmentRepo.save(enrollment);
-        logService.logInfo("Enrollment", "create_enrollment",
+        logService.logInfo(MODULE_ENROLLMENT, ACTION_CREATE_ENROLLMENT,
                 "Matrícula creada: " + saved.getId(), studentId);
 
         return toDto(saved);
@@ -82,14 +100,14 @@ public class EnrollmentService {
 
     // Actualizar matrícula (progreso, estado, etc.)
     public EnrollmentDto updateEnrollment(UUID enrollmentId, UpdateEnrollmentIn input, UUID userId) {
-        logService.logInfo("Enrollment", "update_enrollment",
+        logService.logInfo(MODULE_ENROLLMENT, ACTION_UPDATE_ENROLLMENT,
                 "Actualizando matrícula: " + enrollmentId, userId);
 
         Enrollment enrollment = enrollmentRepo.findById(enrollmentId)
-                .orElseThrow(() -> new RuntimeException("Matrícula no encontrada"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_ENROLLMENT_NOT_FOUND));
 
         UserEntity user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_STUDENT_NOT_FOUND));
 
         // Solo el estudiante, profesor del curso o admin pueden actualizar
         boolean isOwner = enrollment.getStudent().getId().equals(userId);
@@ -97,8 +115,8 @@ public class EnrollmentService {
         boolean isAdmin = user.getRole() == Role.ADMIN;
 
         if (!isOwner && !isTeacher && !isAdmin) {
-            logService.logError("Enrollment", "update_enrollment", "No autorizado", userId);
-            throw new RuntimeException("No autorizado para actualizar esta matrícula");
+            logService.logError(MODULE_ENROLLMENT, ACTION_UPDATE_ENROLLMENT, ERROR_NOT_AUTHORIZED, userId);
+            throw new IllegalArgumentException(ERROR_NOT_AUTHORIZED_UPDATE);
         }
 
         if (input.status() != null) {
@@ -126,7 +144,7 @@ public class EnrollmentService {
         }
 
         Enrollment saved = enrollmentRepo.save(enrollment);
-        logService.logInfo("Enrollment", "update_enrollment",
+        logService.logInfo(MODULE_ENROLLMENT, ACTION_UPDATE_ENROLLMENT,
                 "Matrícula actualizada: " + enrollmentId, userId);
 
         return toDto(saved);
@@ -134,11 +152,11 @@ public class EnrollmentService {
 
     // Activar matrícula (después del pago)
     public EnrollmentDto activateEnrollment(UUID enrollmentId, BigDecimal amountPaid) {
-        logService.logInfo("Enrollment", "activate_enrollment",
+        logService.logInfo(MODULE_ENROLLMENT, ACTION_ACTIVATE_ENROLLMENT,
                 "Activando matrícula: " + enrollmentId, null);
 
         Enrollment enrollment = enrollmentRepo.findById(enrollmentId)
-                .orElseThrow(() -> new RuntimeException("Matrícula no encontrada"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_ENROLLMENT_NOT_FOUND));
 
         enrollment.setStatus(EnrollmentStatus.ACTIVE);
         enrollment.setAmountPaid(amountPaid);
@@ -149,7 +167,7 @@ public class EnrollmentService {
         courseRepo.save(course);
 
         Enrollment saved = enrollmentRepo.save(enrollment);
-        logService.logInfo("Enrollment", "activate_enrollment",
+        logService.logInfo(MODULE_ENROLLMENT, ACTION_ACTIVATE_ENROLLMENT,
                 "Matrícula activada: " + enrollmentId, null);
 
         return toDto(saved);
@@ -159,7 +177,7 @@ public class EnrollmentService {
     @Transactional(readOnly = true)
     public Page<EnrollmentDto> getStudentEnrollments(UUID studentId, Pageable pageable) {
         UserEntity student = userRepo.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
 
         return enrollmentRepo.findByStudent(student, pageable)
                 .map(this::toDto);
@@ -169,7 +187,7 @@ public class EnrollmentService {
     @Transactional(readOnly = true)
     public List<EnrollmentDto> getActiveEnrollments(UUID studentId) {
         UserEntity student = userRepo.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
 
         return enrollmentRepo.findByStudentAndStatus(student, EnrollmentStatus.ACTIVE)
                 .stream()
@@ -181,7 +199,7 @@ public class EnrollmentService {
     @Transactional(readOnly = true)
     public Page<EnrollmentDto> getCourseEnrollments(UUID courseId, Pageable pageable) {
         CourseEntity course = courseRepo.findById(courseId)
-                .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Curso no encontrado"));
 
         return enrollmentRepo.findByCourse(course, pageable)
                 .map(this::toDto);
@@ -191,28 +209,28 @@ public class EnrollmentService {
     @Transactional(readOnly = true)
     public EnrollmentDto getEnrollmentById(UUID enrollmentId) {
         Enrollment enrollment = enrollmentRepo.findById(enrollmentId)
-                .orElseThrow(() -> new RuntimeException("Matrícula no encontrada"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_ENROLLMENT_NOT_FOUND));
 
         return toDto(enrollment);
     }
 
     // Cancelar matrícula
     public void cancelEnrollment(UUID enrollmentId, UUID userId) {
-        logService.logInfo("Enrollment", "cancel_enrollment",
+        logService.logInfo(MODULE_ENROLLMENT, ACTION_CANCEL_ENROLLMENT,
                 "Cancelando matrícula: " + enrollmentId, userId);
 
         Enrollment enrollment = enrollmentRepo.findById(enrollmentId)
-                .orElseThrow(() -> new RuntimeException("Matrícula no encontrada"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_ENROLLMENT_NOT_FOUND));
 
         UserEntity user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_STUDENT_NOT_FOUND));
 
         boolean isOwner = enrollment.getStudent().getId().equals(userId);
         boolean isAdmin = user.getRole() == Role.ADMIN;
 
         if (!isOwner && !isAdmin) {
-            logService.logError("Enrollment", "cancel_enrollment", "No autorizado", userId);
-            throw new RuntimeException("No autorizado");
+            logService.logError(MODULE_ENROLLMENT, ACTION_CANCEL_ENROLLMENT, ERROR_NOT_AUTHORIZED, userId);
+            throw new IllegalArgumentException(ERROR_NOT_AUTHORIZED);
         }
 
         enrollment.setStatus(EnrollmentStatus.CANCELLED);
@@ -225,7 +243,7 @@ public class EnrollmentService {
         }
 
         enrollmentRepo.save(enrollment);
-        logService.logInfo("Enrollment", "cancel_enrollment",
+        logService.logInfo(MODULE_ENROLLMENT, ACTION_CANCEL_ENROLLMENT,
                 "Matrícula cancelada: " + enrollmentId, userId);
     }
 
@@ -234,8 +252,8 @@ public class EnrollmentService {
         return new EnrollmentDto(
                 enrollment.getId(),
                 enrollment.getStudent().getId(),
-                enrollment.getStudent().getNombre() + " " +
-                        (enrollment.getStudent().getApellido() != null ? enrollment.getStudent().getApellido() : ""),
+                enrollment.getStudent().getFirstName() + " " +
+                        (enrollment.getStudent().getLastName() != null ? enrollment.getStudent().getLastName() : ""),
                 enrollment.getStudent().getEmail(),
                 enrollment.getCourse().getId(),
                 enrollment.getCourse().getTitle(),

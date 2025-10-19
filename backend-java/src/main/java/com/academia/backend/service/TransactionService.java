@@ -24,6 +24,19 @@ import java.util.UUID;
 @Transactional
 public class TransactionService {
 
+    // Constants for logging
+    private static final String MODULE_TRANSACTION = "Transaction";
+    private static final String ACTION_CREATE_TRANSACTION = "create_transaction";
+    private static final String ACTION_UPDATE_TRANSACTION = "update_transaction";
+    private static final String ACTION_PAYMENT_SUCCESS = "payment_success";
+    private static final String ACTION_PAYMENT_FAILED = "payment_failed";
+
+    // Constants for error messages
+    private static final String ERROR_COURSE_NOT_FOUND = "Curso no encontrado";
+    private static final String ERROR_USER_NOT_FOUND = "Usuario no encontrado";
+    private static final String ERROR_TRANSACTION_NOT_FOUND = "Transacción no encontrada";
+    private static final String ERROR_PROCESS_PAYMENT = "Error al procesar el pago";
+
     private final TransactionRepo transactionRepo;
     private final UserRepo userRepo;
     private final CourseRepo courseRepo;
@@ -44,18 +57,18 @@ public class TransactionService {
 
     // Crear transacción
     public TransactionDto createTransaction(CreateTransactionIn input, UUID userId) {
-        logService.logInfo("Transaction", "create_transaction",
+        logService.logInfo(MODULE_TRANSACTION, ACTION_CREATE_TRANSACTION,
                 "Creando transacción para curso: " + input.courseId(), userId);
 
         UserEntity user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
 
         CourseEntity course = courseRepo.findById(input.courseId())
-                .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_COURSE_NOT_FOUND));
 
         // Validar que el monto coincida con el precio del curso
         if (course.getPrice().compareTo(input.amount()) != 0) {
-            logService.logWarn("Transaction", "create_transaction",
+            logService.logWarn(MODULE_TRANSACTION, ACTION_CREATE_TRANSACTION,
                     "El monto no coincide con el precio del curso", userId);
         }
 
@@ -71,7 +84,7 @@ public class TransactionService {
         transaction.setMetadata(input.metadata());
 
         Transaction saved = transactionRepo.save(transaction);
-        logService.logInfo("Transaction", "create_transaction",
+        logService.logInfo(MODULE_TRANSACTION, ACTION_CREATE_TRANSACTION,
                 "Transacción creada: " + saved.getTransactionReference(), userId);
 
         return toDto(saved);
@@ -79,11 +92,11 @@ public class TransactionService {
 
     // Actualizar transacción (generalmente desde webhook de pasarela)
     public TransactionDto updateTransaction(UUID transactionId, UpdateTransactionIn input) {
-        logService.logInfo("Transaction", "update_transaction",
+        logService.logInfo(MODULE_TRANSACTION, ACTION_UPDATE_TRANSACTION,
                 "Actualizando transacción: " + transactionId, null);
 
         Transaction transaction = transactionRepo.findById(transactionId)
-                .orElseThrow(() -> new RuntimeException("Transacción no encontrada"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_TRANSACTION_NOT_FOUND));
 
         if (input.externalTransactionId() != null) {
             transaction.setExternalTransactionId(input.externalTransactionId());
@@ -103,7 +116,7 @@ public class TransactionService {
             // Si falla, registrar error
             if (input.status() == TransactionStatus.FAILED) {
                 transaction.setErrorMessage(input.errorMessage());
-                logService.logError("Transaction", "payment_failed",
+                logService.logError(MODULE_TRANSACTION, ACTION_PAYMENT_FAILED,
                         "Pago fallido: " + transaction.getTransactionReference() +
                                 " - " + input.errorMessage(),
                         transaction.getUser().getId());
@@ -122,7 +135,7 @@ public class TransactionService {
         }
 
         Transaction saved = transactionRepo.save(transaction);
-        logService.logInfo("Transaction", "update_transaction",
+        logService.logInfo(MODULE_TRANSACTION, ACTION_UPDATE_TRANSACTION,
                 "Transacción actualizada: " + saved.getTransactionReference(), null);
 
         return toDto(saved);
@@ -130,7 +143,7 @@ public class TransactionService {
 
     // Manejar pago exitoso
     private void handleSuccessfulPayment(Transaction transaction) {
-        logService.logInfo("Transaction", "payment_success",
+        logService.logInfo(MODULE_TRANSACTION, ACTION_PAYMENT_SUCCESS,
                 "Procesando pago exitoso: " + transaction.getTransactionReference(),
                 transaction.getUser().getId());
 
@@ -162,20 +175,20 @@ public class TransactionService {
             transaction.setEnrollment(enrollment);
             transactionRepo.save(transaction);
 
-            logService.logInfo("Transaction", "payment_success",
+            logService.logInfo(MODULE_TRANSACTION, ACTION_PAYMENT_SUCCESS,
                     "Matrícula activada exitosamente", student.getId());
 
         } catch (Exception e) {
-            logService.logError("Transaction", "payment_success",
+            logService.logError(MODULE_TRANSACTION, ACTION_PAYMENT_SUCCESS,
                     "Error al activar matrícula: " + e.getMessage(),
                     transaction.getUser().getId(), e);
-            throw new RuntimeException("Error al procesar pago exitoso", e);
+            throw new IllegalStateException(ERROR_PROCESS_PAYMENT, e);
         }
     }
 
     // Manejar reembolso
     private void handleRefund(Transaction transaction) {
-        logService.logInfo("Transaction", "refund",
+        logService.logInfo(MODULE_TRANSACTION, "refund",
                 "Procesando reembolso: " + transaction.getTransactionReference(),
                 transaction.getUser().getId());
 
@@ -186,7 +199,7 @@ public class TransactionService {
                         transaction.getEnrollment().getId(),
                         transaction.getUser().getId());
             } catch (Exception e) {
-                logService.logError("Transaction", "refund",
+                logService.logError(MODULE_TRANSACTION, "refund",
                         "Error al cancelar matrícula en reembolso: " + e.getMessage(),
                         transaction.getUser().getId(), e);
             }
@@ -197,7 +210,7 @@ public class TransactionService {
     @Transactional(readOnly = true)
     public TransactionDto getTransactionByReference(String reference) {
         Transaction transaction = transactionRepo.findByTransactionReference(reference)
-                .orElseThrow(() -> new RuntimeException("Transacción no encontrada"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_TRANSACTION_NOT_FOUND));
 
         return toDto(transaction);
     }
@@ -206,7 +219,7 @@ public class TransactionService {
     @Transactional(readOnly = true)
     public Page<TransactionDto> getUserTransactions(UUID userId, Pageable pageable) {
         UserEntity user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
 
         return transactionRepo.findByUserOrderByCreatedAtDesc(user, pageable)
                 .map(this::toDto);
@@ -216,7 +229,7 @@ public class TransactionService {
     @Transactional(readOnly = true)
     public Page<TransactionDto> getCourseTransactions(UUID courseId, Pageable pageable) {
         CourseEntity course = courseRepo.findById(courseId)
-                .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_COURSE_NOT_FOUND));
 
         return transactionRepo.findByCourseOrderByCreatedAtDesc(course, pageable)
                 .map(this::toDto);
@@ -245,7 +258,7 @@ public class TransactionService {
     @Transactional(readOnly = true)
     public BigDecimal getCourseRevenue(UUID courseId) {
         CourseEntity course = courseRepo.findById(courseId)
-                .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_COURSE_NOT_FOUND));
 
         return transactionRepo.calculateRevenueForCourse(course);
     }
