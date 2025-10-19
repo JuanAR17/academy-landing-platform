@@ -5,7 +5,13 @@ import java.util.List;
 public class CountryDto {
     private Long id;
     private String name;
+    private String emoji;
+    private String nationality;
+    private String numericCode;
     private String phoneCode;
+    private String currency;
+    private String currencyName;
+    private String currencySymbol;
     private List<StateDto> states;
 
     // Getters and setters
@@ -25,12 +31,60 @@ public class CountryDto {
         this.name = name;
     }
 
+    public String getEmoji() {
+        return emoji;
+    }
+
+    public void setEmoji(String emoji) {
+        this.emoji = emoji;
+    }
+
+    public String getNationality() {
+        return nationality;
+    }
+
+    public void setNationality(String nationality) {
+        this.nationality = nationality;
+    }
+
+    public String getNumericCode() {
+        return numericCode;
+    }
+
+    public void setNumericCode(String numericCode) {
+        this.numericCode = numericCode;
+    }
+
     public String getPhoneCode() {
         return phoneCode;
     }
 
     public void setPhoneCode(String phoneCode) {
         this.phoneCode = phoneCode;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public String getCurrencyName() {
+        return currencyName;
+    }
+
+    public void setCurrencyName(String currencyName) {
+        this.currencyName = currencyName;
+    }
+
+    public String getCurrencySymbol() {
+        return currencySymbol;
+    }
+
+    public void setCurrencySymbol(String currencySymbol) {
+        this.currencySymbol = currencySymbol;
     }
 
     public List<StateDto> getStates() {

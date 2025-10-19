@@ -12,7 +12,6 @@ import com.academia.backend.repo.StateRepo;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class LocationService {
@@ -35,10 +34,16 @@ public class LocationService {
                     CountryDto dto = new CountryDto();
                     dto.setId(country.getId());
                     dto.setName(country.getName());
+                    dto.setEmoji(country.getEmoji());
+                    dto.setNationality(country.getNationality());
+                    dto.setNumericCode(country.getNumericCode());
                     dto.setPhoneCode(country.getPhoneCode());
+                    dto.setCurrency(country.getCurrency());
+                    dto.setCurrencyName(country.getCurrencyName());
+                    dto.setCurrencySymbol(country.getCurrencySymbol());
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // Nuevo método: Obtener estados por ID de país
@@ -51,7 +56,7 @@ public class LocationService {
                     dto.setName(state.getName());
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // Nuevo método: Obtener ciudades por ID de estado
@@ -64,6 +69,6 @@ public class LocationService {
                     dto.setName(city.getName());
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 }
