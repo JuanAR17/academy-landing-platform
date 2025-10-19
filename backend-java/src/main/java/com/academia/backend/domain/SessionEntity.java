@@ -1,61 +1,114 @@
 package com.academia.backend.domain;
 
 import jakarta.persistence.*;
+import java.net.InetAddress;
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name="sessions")
+@Table(name = "sessions")
 public class SessionEntity {
-  @Id @Column(columnDefinition="uuid")
+  @Id
+  @Column(columnDefinition = "uuid")
   private UUID id;
 
-  @Column(name="user_id", nullable=false, columnDefinition="uuid")
+  @Column(name = "user_id", nullable = false, columnDefinition = "uuid")
   private UUID userId;
 
-  @Lob
-  @Column(name="refresh_token_hash", nullable=false, unique=true)
+  @Column(name = "refresh_token_hash", nullable = false, unique = true, columnDefinition = "bytea")
   private byte[] refreshTokenHash;
 
-  @Column(name="created_at", nullable=false)  private Instant createdAt;
-  @Column(name="last_used_at")               private Instant lastUsedAt;
-  @Column(name="expires_at", nullable=false) private Instant expiresAt;
-  @Column(name="is_revoked", nullable=false) private boolean revoked = false;
-  @Column(name="ip")                         private String ip;
-  @Column(name="user_agent")                 private String userAgent;
+  @Column(name = "created_at", nullable = false)
+  private Instant createdAt;
+  @Column(name = "last_used_at")
+  private Instant lastUsedAt;
+  @Column(name = "expires_at", nullable = false)
+  private Instant expiresAt;
+  @Column(name = "is_revoked", nullable = false)
+  private boolean revoked = false;
+    @Column(name = "ip")
+  private InetAddress ip;
+  @Column(name = "user_agent")
+  private String userAgent;
 
   @PrePersist
   void pre() {
-    if (id == null) id = UUID.randomUUID();
-    if (createdAt == null) createdAt = Instant.now();
+    if (id == null)
+      id = UUID.randomUUID();
+    if (createdAt == null)
+      createdAt = Instant.now();
   }
 
   // --- getters/setters ---
-  public UUID getId() { return id; }
-  public void setId(UUID id) { this.id = id; }
+  public UUID getId() {
+    return id;
+  }
 
-  public UUID getUserId() { return userId; }
-  public void setUserId(UUID userId) { this.userId = userId; }
+  public void setId(UUID id) {
+    this.id = id;
+  }
 
-  public byte[] getRefreshTokenHash() { return refreshTokenHash; }
-  public void setRefreshTokenHash(byte[] refreshTokenHash) { this.refreshTokenHash = refreshTokenHash; }
+  public UUID getUserId() {
+    return userId;
+  }
 
-  public Instant getCreatedAt() { return createdAt; }
-  public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+  public void setUserId(UUID userId) {
+    this.userId = userId;
+  }
 
-  public Instant getLastUsedAt() { return lastUsedAt; }
-  public void setLastUsedAt(Instant lastUsedAt) { this.lastUsedAt = lastUsedAt; }
+  public byte[] getRefreshTokenHash() {
+    return refreshTokenHash;
+  }
 
-  public Instant getExpiresAt() { return expiresAt; }
-  public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }
+  public void setRefreshTokenHash(byte[] refreshTokenHash) {
+    this.refreshTokenHash = refreshTokenHash;
+  }
 
-  public boolean isRevoked() { return revoked; }
-  public void setRevoked(boolean revoked) { this.revoked = revoked; }
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
 
-  public String getIp() { return ip; }
-  public void setIp(String ip) { this.ip = ip; }
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
 
-  public String getUserAgent() { return userAgent; }
-  public void setUserAgent(String userAgent) { this.userAgent = userAgent; }
+  public Instant getLastUsedAt() {
+    return lastUsedAt;
+  }
+
+  public void setLastUsedAt(Instant lastUsedAt) {
+    this.lastUsedAt = lastUsedAt;
+  }
+
+  public Instant getExpiresAt() {
+    return expiresAt;
+  }
+
+  public void setExpiresAt(Instant expiresAt) {
+    this.expiresAt = expiresAt;
+  }
+
+  public boolean isRevoked() {
+    return revoked;
+  }
+
+  public void setRevoked(boolean revoked) {
+    this.revoked = revoked;
+  }
+
+  public InetAddress getIp() {
+    return ip;
+  }
+
+  public void setIp(InetAddress ip) {
+    this.ip = ip;
+  }
+
+  public String getUserAgent() {
+    return userAgent;
+  }
+
+  public void setUserAgent(String userAgent) {
+    this.userAgent = userAgent;
+  }
 }
-

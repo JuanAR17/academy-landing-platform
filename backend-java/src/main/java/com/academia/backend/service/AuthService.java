@@ -1,13 +1,17 @@
 package com.academia.backend.service;
 
 import com.academia.backend.domain.Address;
+import com.academia.backend.domain.Role;
+import com.academia.backend.domain.RoleEntity;
 import com.academia.backend.domain.SessionEntity;
 import com.academia.backend.domain.UserEntity;
 import com.academia.backend.dto.AddressDto;
 import com.academia.backend.dto.TokenOut;
 import com.academia.backend.dto.UserDto;
+import com.academia.backend.repo.RoleRepo;
 import com.academia.backend.repo.SessionRepo;
 import com.academia.backend.repo.UserRepo;
+import java.net.InetAddress;
 import jakarta.servlet.http.Cookie;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
@@ -28,6 +32,7 @@ import java.util.UUID;
 public class AuthService {
   private final UserRepo users;
   private final SessionRepo sessions;
+  private final RoleRepo roles;
   private final JwtService jwt;
   private final SecureRandom rnd = new SecureRandom();
   private final Argon2PasswordEncoder argon = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
@@ -51,9 +56,10 @@ public class AuthService {
   @Value("${cookies.path:/}")
   String cookiePath;
 
-  public AuthService(UserRepo users, SessionRepo sessions, JwtService jwt) {
+  public AuthService(UserRepo users, SessionRepo sessions, RoleRepo roles, JwtService jwt) {
     this.users = users;
     this.sessions = sessions;
+    this.roles = roles;
     this.jwt = jwt;
   }
 
@@ -97,13 +103,14 @@ public class AuthService {
     return new TokenOut(access, csrf, user.getId());
   }
 
-  public SessionEntity newSession(UUID userId, byte[] refreshHash, String ua) {
+  public SessionEntity newSession(UUID userId, byte[] refreshHash, String ua, InetAddress ip) {
     SessionEntity s = new SessionEntity();
     s.setUserId(userId);
     s.setRefreshTokenHash(refreshHash);
     s.setCreatedAt(Instant.now());
     s.setExpiresAt(Instant.now().plus(sessionTtlDays, ChronoUnit.DAYS));
     s.setUserAgent(ua);
+    s.setIp(ip);
     return sessions.save(s);
   }
 
@@ -202,8 +209,10 @@ public class AuthService {
   }
 
   private void updateAdminFields(UserEntity user, UserDto updateData) {
-    if (updateData.getIsAdmin() != null) {
-      user.setAdmin(updateData.getIsAdmin());
+    if (updateData.getRole() != null) {
+      RoleEntity roleEntity = roles.findByName(updateData.getRole().name())
+          .orElseThrow(() -> new IllegalArgumentException("Role not found: " + updateData.getRole().name()));
+      user.setRoleEntity(roleEntity);
     }
   }
 
@@ -227,7 +236,7 @@ public class AuthService {
       dto.setAddress(addressDto);
     }
     dto.setHowDidYouFindUs(user.getHowDidYouFindUs());
-    dto.setIsAdmin(user.isAdmin());
+    dto.setRole(Role.valueOf(user.getRoleEntity().getName()));
     dto.createdAt = user.getCreatedAt();
     return dto;
   }
@@ -265,7 +274,7 @@ public class AuthService {
             dto.setAddress(addressDto);
           }
           dto.setHowDidYouFindUs(user.getHowDidYouFindUs());
-          dto.setIsAdmin(user.isAdmin());
+          dto.setRole(Role.valueOf(user.getRoleEntity().getName()));
           dto.createdAt = user.getCreatedAt();
           return dto;
         })

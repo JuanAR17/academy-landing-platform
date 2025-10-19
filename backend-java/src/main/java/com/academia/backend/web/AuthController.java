@@ -8,6 +8,7 @@ import com.academia.backend.dto.LoginIn;
 import com.academia.backend.dto.RegisterIn;
 import com.academia.backend.dto.TokenOut;
 import com.academia.backend.dto.UserDto;
+import com.academia.backend.repo.RoleRepo;
 import com.academia.backend.repo.SessionRepo;
 import com.academia.backend.repo.UserRepo;
 import com.academia.backend.service.AuthService;
@@ -16,10 +17,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.net.InetAddress;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -31,10 +34,11 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
   private final UserRepo users;
   private final SessionRepo sessions;
+  private final RoleRepo roles;
   private final AuthService auth;
   private final JwtService jwt;
 
@@ -50,9 +54,10 @@ public class AuthController {
   private static final String RT_COOKIE = "rt";
   private static final String CSRF_COOKIE = "csrf";
 
-  public AuthController(UserRepo users, SessionRepo sessions, AuthService auth, JwtService jwt) {
+  public AuthController(UserRepo users, SessionRepo sessions, RoleRepo roles, AuthService auth, JwtService jwt) {
     this.users = users;
     this.sessions = sessions;
+    this.roles = roles;
     this.auth = auth;
     this.jwt = jwt;
   }
@@ -60,7 +65,8 @@ public class AuthController {
   @PostMapping("/login")
   @Operation(summary = "Login: crea sesión y entrega access JWT + cookies (rt, csrf)")
   public ResponseEntity<TokenOut> login(@Valid @RequestBody LoginIn in,
-      @RequestHeader(value = "User-Agent", required = false) String ua) {
+      @RequestHeader(value = "User-Agent", required = false) String ua,
+      HttpServletRequest request) {
     UserEntity user = users.findByEmailOrUsername(in.identifier)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
     if (!auth.verifyPassword(user.getPasswordHash(), in.password))
@@ -69,7 +75,8 @@ public class AuthController {
     String refreshPlain = auth.genRandomUrlToken();
     byte[] rth = auth.hmacRefresh(refreshPlain);
 
-    SessionEntity row = auth.newSession(user.getId(), rth, ua);
+    InetAddress clientIp = getClientIp(request);
+    SessionEntity row = auth.newSession(user.getId(), rth, ua, clientIp);
 
     String csrf = auth.genRandomUrlToken();
     String access = jwt.mintAccess(user.getId().toString(), row.getId().toString());
@@ -84,7 +91,7 @@ public class AuthController {
   @PostMapping("/register")
   @Operation(summary = "Registro de nuevo usuario")
   public ResponseEntity<TokenOut> register(@Valid @RequestBody RegisterIn in,
-      @RequestHeader(value = "User-Agent", required = false) String ua) {
+      @RequestHeader(value = "User-Agent", required = false) String ua, HttpServletRequest request) {
     // Valida que el email no exista
     if (users.findByEmail(in.getCorreo()).isPresent()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El email ya está registrado");
@@ -95,46 +102,14 @@ public class AuthController {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de usuario ya está en uso");
     }
 
-    // Crea un nuevo usuario (siempre como usuario normal)
-    UserEntity user = new UserEntity();
-    user.setEmail(in.getCorreo());
-    user.setUsername(in.getUsername());
-    user.setPasswordHash(auth.hashPassword(in.contrasena));
-    user.setFirstName(in.getFirstName());
-    user.setLastName(in.getLastName());
-    user.setPhone(in.getPhone());
-    user.setNationality(in.getNationality());
-    if (in.getAddress() != null) {
-      Address address = new Address();
-      address.setAddress(in.getAddress().getAddress());
-      address.setCity(in.getAddress().getCity());
-      address.setState(in.getAddress().getState());
-      address.setCountry(in.getAddress().getCountry());
-      user.setAddress(address);
-    }
-    user.setHowDidYouFindUs(in.getHowDidYouFindUs());
-    user.setAdmin(false); // Siempre registra como usuario normal
-    user = users.save(user);
-
-    // Crea una sesión automáticamente
-    String refreshPlain = auth.genRandomUrlToken();
-    byte[] rth = auth.hmacRefresh(refreshPlain);
-    SessionEntity row = auth.newSession(user.getId(), rth, ua);
-
-    String csrf = auth.genRandomUrlToken();
-    String access = jwt.mintAccess(user.getId().toString(), row.getId().toString());
-    TokenOut out = new TokenOut(access, csrf, user.getId());
-
-    HttpHeaders headers = new HttpHeaders();
-    headers.add(HttpHeaders.SET_COOKIE, buildCookie(RT_COOKIE, refreshPlain, true, 60L * 60 * 24 * 60));
-    headers.add(HttpHeaders.SET_COOKIE, buildCookie(CSRF_COOKIE, csrf, false, 60L * 60 * 24 * 60));
-    return ResponseEntity.status(HttpStatus.CREATED).headers(headers).body(out);
+    return createUserAndSession(in, false, ua, request);
   }
 
   @PostMapping("/register-admin")
+  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Registro de nuevo administrador (solo para administradores)")
   public ResponseEntity<TokenOut> registerAdmin(@Valid @RequestBody RegisterIn in,
-      @RequestHeader(value = "User-Agent", required = false) String ua) {
+      @RequestHeader(value = "User-Agent", required = false) String ua, HttpServletRequest request) {
     // Verificar que el usuario autenticado sea administrador
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null || !authentication.isAuthenticated()) {
@@ -164,6 +139,11 @@ public class AuthController {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de usuario ya está en uso");
     }
 
+    return createUserAndSession(in, true, ua, request);
+  }
+
+  private ResponseEntity<TokenOut> createUserAndSession(RegisterIn in, boolean isAdmin,
+      @RequestHeader(value = "User-Agent", required = false) String ua, HttpServletRequest request) {
     UserEntity user = new UserEntity();
     user.setEmail(in.getCorreo());
     user.setUsername(in.getUsername());
@@ -181,13 +161,18 @@ public class AuthController {
       user.setAddress(address);
     }
     user.setHowDidYouFindUs(in.getHowDidYouFindUs());
-    user.setAdmin(true); // Registra como administrador
+    // Assign role based on isAdmin parameter
+    String roleName = isAdmin ? "ADMIN" : "STUDENT";
+    var roleEntity = roles.findByName(roleName)
+        .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+    user.setRoleEntity(roleEntity);
     user = users.save(user);
 
     // Crea una sesión automáticamente
     String refreshPlain = auth.genRandomUrlToken();
     byte[] rth = auth.hmacRefresh(refreshPlain);
-    SessionEntity row = auth.newSession(user.getId(), rth, ua);
+    InetAddress clientIp = getClientIp(request);
+    SessionEntity row = auth.newSession(user.getId(), rth, ua, clientIp);
 
     String csrf = auth.genRandomUrlToken();
     String access = jwt.mintAccess(user.getId().toString(), row.getId().toString());
@@ -416,5 +401,29 @@ public class AuthController {
         return c.getValue();
     }
     return null;
+  }
+
+  private InetAddress getClientIp(HttpServletRequest request) {
+    String xForwardedFor = request.getHeader("X-Forwarded-For");
+    if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+      try {
+        return InetAddress.getByName(xForwardedFor.split(",")[0].trim());
+      } catch (Exception e) {
+        // Ignore and try next
+      }
+    }
+    String xRealIp = request.getHeader("X-Real-IP");
+    if (xRealIp != null && !xRealIp.isEmpty()) {
+      try {
+        return InetAddress.getByName(xRealIp);
+      } catch (Exception e) {
+        // Ignore and try next
+      }
+    }
+    try {
+      return InetAddress.getByName(request.getRemoteAddr());
+    } catch (Exception e) {
+      return null;
+    }
   }
 }
