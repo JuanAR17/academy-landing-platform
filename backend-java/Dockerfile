@@ -23,6 +23,9 @@ ENV JAVA_OPTS="-Xms256m -Xmx512m"
 # 👇 OJO: esta línea depende de la etapa llamada EXACTAMENTE "build"
 COPY --from=build /app/target/*.jar /app/app.jar
 
+# Crear directorio de logs
+RUN mkdir -p /app/logs
+
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --retries=5 \
   CMD curl -fsS http://localhost:8080/health || exit 1

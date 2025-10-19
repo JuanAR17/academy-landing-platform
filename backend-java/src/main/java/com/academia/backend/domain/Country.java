@@ -15,6 +15,24 @@ public class Country {
     @Column(name = "phone_code")
     private String phoneCode;
 
+    @Column
+    private String emoji;
+
+    @Column
+    private String nationality;
+
+    @Column(name = "numeric_code")
+    private String numericCode;
+
+    @Column
+    private String currency;
+
+    @Column(name = "currency_name")
+    private String currencyName;
+
+    @Column(name = "currency_symbol")
+    private String currencySymbol;
+
     @OneToMany(mappedBy = "country", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<State> states;
 
@@ -49,5 +67,53 @@ public class Country {
 
     public void setStates(List<State> states) {
         this.states = states;
+    }
+
+    public String getEmoji() {
+        return emoji;
+    }
+
+    public void setEmoji(String emoji) {
+        this.emoji = emoji;
+    }
+
+    public String getNationality() {
+        return nationality;
+    }
+
+    public void setNationality(String nationality) {
+        this.nationality = nationality;
+    }
+
+    public String getNumericCode() {
+        return numericCode;
+    }
+
+    public void setNumericCode(String numericCode) {
+        this.numericCode = numericCode;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public String getCurrencyName() {
+        return currencyName;
+    }
+
+    public void setCurrencyName(String currencyName) {
+        this.currencyName = currencyName;
+    }
+
+    public String getCurrencySymbol() {
+        return currencySymbol;
+    }
+
+    public void setCurrencySymbol(String currencySymbol) {
+        this.currencySymbol = currencySymbol;
     }
 }

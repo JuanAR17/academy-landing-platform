@@ -95,7 +95,7 @@ public class AuthController {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de usuario ya está en uso");
     }
 
-    // Crea un nuevo usuario
+    // Crea un nuevo usuario (siempre como usuario normal)
     UserEntity user = new UserEntity();
     user.setEmail(in.getCorreo());
     user.setUsername(in.getUsername());
@@ -113,6 +113,75 @@ public class AuthController {
       user.setAddress(address);
     }
     user.setHowDidYouFindUs(in.getHowDidYouFindUs());
+    user.setAdmin(false); // Siempre registra como usuario normal
+    user = users.save(user);
+
+    // Crea una sesión automáticamente
+    String refreshPlain = auth.genRandomUrlToken();
+    byte[] rth = auth.hmacRefresh(refreshPlain);
+    SessionEntity row = auth.newSession(user.getId(), rth, ua);
+
+    String csrf = auth.genRandomUrlToken();
+    String access = jwt.mintAccess(user.getId().toString(), row.getId().toString());
+    TokenOut out = new TokenOut(access, csrf, user.getId());
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(HttpHeaders.SET_COOKIE, buildCookie(RT_COOKIE, refreshPlain, true, 60L * 60 * 24 * 60));
+    headers.add(HttpHeaders.SET_COOKIE, buildCookie(CSRF_COOKIE, csrf, false, 60L * 60 * 24 * 60));
+    return ResponseEntity.status(HttpStatus.CREATED).headers(headers).body(out);
+  }
+
+  @PostMapping("/register-admin")
+  @Operation(summary = "Registro de nuevo administrador (solo para administradores)")
+  public ResponseEntity<TokenOut> registerAdmin(@Valid @RequestBody RegisterIn in,
+      @RequestHeader(value = "User-Agent", required = false) String ua) {
+    // Verificar que el usuario autenticado sea administrador
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || !authentication.isAuthenticated()) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
+    }
+
+    String userIdStr = authentication.getName();
+    UUID currentUserId;
+    try {
+      currentUserId = UUID.fromString(userIdStr);
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido");
+    }
+
+    // Verificar permisos de admin
+    UserDto currentUser = auth.getUserInfo(currentUserId);
+    if (!Boolean.TRUE.equals(currentUser.getIsAdmin())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+          "Solo administradores pueden registrar otros administradores");
+    }
+
+    if (users.findByEmail(in.getCorreo()).isPresent()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El email ya está registrado");
+    }
+
+    if (users.findByUsername(in.getUsername()).isPresent()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de usuario ya está en uso");
+    }
+
+    UserEntity user = new UserEntity();
+    user.setEmail(in.getCorreo());
+    user.setUsername(in.getUsername());
+    user.setPasswordHash(auth.hashPassword(in.contrasena));
+    user.setFirstName(in.getFirstName());
+    user.setLastName(in.getLastName());
+    user.setPhone(in.getPhone());
+    user.setNationality(in.getNationality());
+    if (in.getAddress() != null) {
+      Address address = new Address();
+      address.setAddress(in.getAddress().getAddress());
+      address.setCity(in.getAddress().getCity());
+      address.setState(in.getAddress().getState());
+      address.setCountry(in.getAddress().getCountry());
+      user.setAddress(address);
+    }
+    user.setHowDidYouFindUs(in.getHowDidYouFindUs());
+    user.setAdmin(true); // Registra como administrador
     user = users.save(user);
 
     // Crea una sesión automáticamente

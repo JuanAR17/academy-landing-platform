@@ -11,6 +11,11 @@ public class CountryJsonDto {
     private String nationality;
     @JsonProperty("numeric_code")
     private String numericCode;
+    private String currency;
+    @JsonProperty("currency_name")
+    private String currencyName;
+    @JsonProperty("currency_symbol")
+    private String currencySymbol;
 
     // Getters and setters
     public int getId() {
@@ -67,5 +72,29 @@ public class CountryJsonDto {
 
     public void setNumericCode(String numericCode) {
         this.numericCode = numericCode;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public String getCurrencyName() {
+        return currencyName;
+    }
+
+    public void setCurrencyName(String currencyName) {
+        this.currencyName = currencyName;
+    }
+
+    public String getCurrencySymbol() {
+        return currencySymbol;
+    }
+
+    public void setCurrencySymbol(String currencySymbol) {
+        this.currencySymbol = currencySymbol;
     }
 }

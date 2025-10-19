@@ -119,6 +119,12 @@ public class DataImportService implements CommandLineRunner {
                 country.setId(Long.valueOf(dto.getId()));
                 country.setName(dto.getName());
                 country.setPhoneCode("+" + dto.getPhonecode());
+                country.setEmoji(dto.getEmoji());
+                country.setNationality(dto.getNationality());
+                country.setNumericCode(dto.getNumericCode());
+                country.setCurrency(dto.getCurrency());
+                country.setCurrencyName(dto.getCurrencyName());
+                country.setCurrencySymbol(dto.getCurrencySymbol());
                 countriesToSave.add(country);
 
                 // Guardar en lotes
