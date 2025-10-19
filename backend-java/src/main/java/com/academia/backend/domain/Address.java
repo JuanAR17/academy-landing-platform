@@ -12,14 +12,17 @@ public class Address {
     @Column(name = "address", nullable = false)
     private String address;
 
-    @Column(name = "city")
+    @Column(name = "city", nullable = false)
     private String city;
 
-    @Column(name = "state")
+    @Column(name = "state", nullable = false)
     private String state;
 
-    @Column(name = "country")
+    @Column(name = "country", nullable = false)
     private String country;
+
+    @Column(name = "zip_code")
+    private String zipCode;
 
     @OneToOne(mappedBy = "address")
     private UserEntity user;
@@ -63,6 +66,14 @@ public class Address {
 
     public void setCountry(String country) {
         this.country = country;
+    }
+
+    public String getZipCode() {
+        return zipCode;
+    }
+
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
     }
 
     public UserEntity getUser() {

@@ -3,8 +3,6 @@ package com.academia.backend.domain;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -30,7 +28,7 @@ public class CourseEntity {
     private String videoPreviewUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "teacher_id", nullable = false)
+    @JoinColumn(name = "instructor_id", nullable = false)
     private UserEntity teacher;
 
     @Column(nullable = false, precision = 10, scale = 2)
@@ -55,20 +53,14 @@ public class CourseEntity {
     @Column(nullable = false)
     private String category;
 
-    @ElementCollection
-    @CollectionTable(name = "course_tags", joinColumns = @JoinColumn(name = "course_id"))
-    @Column(name = "tag")
-    private List<String> tags = new ArrayList<>();
+    @Column(columnDefinition = "text[]")
+    private String[] tags;
 
-    @ElementCollection
-    @CollectionTable(name = "course_requirements", joinColumns = @JoinColumn(name = "course_id"))
-    @Column(name = "requirement", columnDefinition = "text")
-    private List<String> requirements = new ArrayList<>();
+    @Column(columnDefinition = "text[]")
+    private String[] requirements;
 
-    @ElementCollection
-    @CollectionTable(name = "course_learning_outcomes", joinColumns = @JoinColumn(name = "course_id"))
-    @Column(name = "outcome", columnDefinition = "text")
-    private List<String> learningOutcomes = new ArrayList<>();
+    @Column(columnDefinition = "text[]")
+    private String[] learningOutcomes;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -206,27 +198,27 @@ public class CourseEntity {
         this.category = category;
     }
 
-    public List<String> getTags() {
+    public String[] getTags() {
         return tags;
     }
 
-    public void setTags(List<String> tags) {
+    public void setTags(String[] tags) {
         this.tags = tags;
     }
 
-    public List<String> getRequirements() {
+    public String[] getRequirements() {
         return requirements;
     }
 
-    public void setRequirements(List<String> requirements) {
+    public void setRequirements(String[] requirements) {
         this.requirements = requirements;
     }
 
-    public List<String> getLearningOutcomes() {
+    public String[] getLearningOutcomes() {
         return learningOutcomes;
     }
 
-    public void setLearningOutcomes(List<String> learningOutcomes) {
+    public void setLearningOutcomes(String[] learningOutcomes) {
         this.learningOutcomes = learningOutcomes;
     }
 

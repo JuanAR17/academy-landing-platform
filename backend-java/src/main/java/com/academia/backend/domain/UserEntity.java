@@ -40,12 +40,9 @@ public class UserEntity {
   @Column(name = "how_did_you_find_us")
   private String howDidYouFindUs;
 
-  @Column(name = "is_admin", nullable = false)
-  private boolean isAdmin = false;
-
-  @Enumerated(EnumType.STRING)
-  @Column(name = "role", nullable = false)
-  private Role role = Role.STUDENT;
+  @ManyToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "role_id", nullable = false)
+  private RoleEntity roleEntity;
 
   @Column(name = "bio", columnDefinition = "text")
   private String bio;
@@ -147,12 +144,20 @@ public class UserEntity {
     this.howDidYouFindUs = howDidYouFindUs;
   }
 
-  public boolean isAdmin() {
-    return isAdmin;
+  public RoleEntity getRoleEntity() {
+    return roleEntity;
   }
 
-  public void setAdmin(boolean isAdmin) {
-    this.isAdmin = isAdmin;
+  public void setRoleEntity(RoleEntity roleEntity) {
+    this.roleEntity = roleEntity;
+  }
+
+  public boolean isAdmin() {
+    return roleEntity != null && (roleEntity.isAdmin() || roleEntity.isSuperAdmin());
+  }
+
+  public boolean isSuperAdmin() {
+    return roleEntity != null && roleEntity.isSuperAdmin();
   }
 
   public Instant getCreatedAt() {
@@ -164,11 +169,12 @@ public class UserEntity {
   }
 
   public Role getRole() {
-    return role;
+    return roleEntity != null ? Role.valueOf(roleEntity.getName()) : Role.STUDENT;
   }
 
   public void setRole(Role role) {
-    this.role = role;
+    // This method is kept for backward compatibility
+    // Role should be set via setRoleEntity()
   }
 
   public String getBio() {

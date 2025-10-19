@@ -6,9 +6,9 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "system_logs", indexes = {
-  @Index(name = "idx_log_level", columnList = "log_level"),
-  @Index(name = "idx_created_at", columnList = "created_at"),
-  @Index(name = "idx_module", columnList = "module")
+    @Index(name = "idx_log_level", columnList = "log_level"),
+    @Index(name = "idx_created_at", columnList = "created_at"),
+    @Index(name = "idx_module", columnList = "module")
 })
 public class SystemLog {
   @Id
@@ -31,7 +31,7 @@ public class SystemLog {
   @JoinColumn(name = "user_id")
   private UserEntity user;
 
-  @Column(name = "ip_address", length = 45)
+  @Column(name = "ip_address", columnDefinition = "text")
   private String ipAddress;
 
   @Column(name = "user_agent", columnDefinition = "text")
@@ -52,7 +52,8 @@ public class SystemLog {
   @Column(name = "stack_trace", columnDefinition = "text")
   private String stackTrace;
 
-  @Column(name = "additional_data", columnDefinition = "text")
+  @Column(name = "additional_data", columnDefinition = "jsonb")
+  @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
   private String additionalData;
 
   @Column(name = "created_at", nullable = false)

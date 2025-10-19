@@ -18,8 +18,9 @@ public class SecurityConfig {
     http.csrf(csrf -> csrf.disable());
     http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
     http.authorizeHttpRequests(auth -> auth
-        .requestMatchers("/auth/login", "/auth/register", "/auth/register-admin", "/auth/refresh", "/auth/check", "/auth/logout",
-            "/health", "/ingest", "/api/locations/**",
+        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh", "/api/auth/check",
+            "/api/auth/logout",
+            "/health", "/ingest", "/api/locations/**", "/api/courses", "/api/courses/**",
             "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
         .permitAll()
         .anyRequest().authenticated());

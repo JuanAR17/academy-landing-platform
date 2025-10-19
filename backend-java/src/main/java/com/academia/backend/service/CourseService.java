@@ -48,7 +48,8 @@ public class CourseService {
         UserEntity teacher = userRepo.findById(teacherId)
                 .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
 
-        if (teacher.getRole() != Role.TEACHER && teacher.getRole() != Role.ADMIN) {
+        if (teacher.getRole() != Role.TEACHER && teacher.getRole() != Role.ADMIN
+                && teacher.getRole() != Role.SUPER_ADMIN) {
             logService.logError(MODULE_COURSE, ACTION_CREATE_COURSE, "Usuario no autorizado para crear cursos",
                     teacherId);
             throw new IllegalArgumentException(ERROR_ONLY_TEACHERS_CREATE);
@@ -68,13 +69,13 @@ public class CourseService {
         course.setCategory(input.category());
 
         if (input.tags() != null) {
-            course.setTags(input.tags());
+            course.setTags(input.tags().toArray(new String[0]));
         }
         if (input.requirements() != null) {
-            course.setRequirements(input.requirements());
+            course.setRequirements(input.requirements().toArray(new String[0]));
         }
         if (input.learningOutcomes() != null) {
-            course.setLearningOutcomes(input.learningOutcomes());
+            course.setLearningOutcomes(input.learningOutcomes().toArray(new String[0]));
         }
 
         CourseEntity saved = courseRepo.save(course);
@@ -122,11 +123,11 @@ public class CourseService {
         if (input.category() != null)
             course.setCategory(input.category());
         if (input.tags() != null)
-            course.setTags(input.tags());
+            course.setTags(input.tags().toArray(new String[0]));
         if (input.requirements() != null)
-            course.setRequirements(input.requirements());
+            course.setRequirements(input.requirements().toArray(new String[0]));
         if (input.learningOutcomes() != null)
-            course.setLearningOutcomes(input.learningOutcomes());
+            course.setLearningOutcomes(input.learningOutcomes().toArray(new String[0]));
 
         CourseEntity saved = courseRepo.save(course);
         logService.logInfo(MODULE_COURSE, ACTION_UPDATE_COURSE, "Curso actualizado: " + courseId, userId);
@@ -244,9 +245,9 @@ public class CourseService {
                 course.getMaxStudents(),
                 course.getCurrentStudents(),
                 course.getCategory(),
-                course.getTags(),
-                course.getRequirements(),
-                course.getLearningOutcomes(),
+                course.getTags() != null ? List.of(course.getTags()) : List.of(),
+                course.getRequirements() != null ? List.of(course.getRequirements()) : List.of(),
+                course.getLearningOutcomes() != null ? List.of(course.getLearningOutcomes()) : List.of(),
                 course.getCreatedAt() != null ? course.getCreatedAt().toString() : null,
                 course.getUpdatedAt() != null ? course.getUpdatedAt().toString() : null,
                 course.getPublishedAt() != null ? course.getPublishedAt().toString() : null);

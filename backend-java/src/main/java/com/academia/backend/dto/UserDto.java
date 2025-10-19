@@ -1,5 +1,6 @@
 package com.academia.backend.dto;
 
+import com.academia.backend.domain.Role;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
@@ -29,7 +30,7 @@ public class UserDto {
 
     protected String howDidYouFindUs;
 
-    protected Boolean isAdmin;
+    protected Role role;
 
     @JsonIgnore
     public Instant createdAt;
@@ -99,11 +100,30 @@ public class UserDto {
         this.howDidYouFindUs = howDidYouFindUs;
     }
 
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    // Legacy methods for backward compatibility
     public Boolean getIsAdmin() {
-        return isAdmin;
+        return role == Role.ADMIN || role == Role.SUPER_ADMIN;
     }
 
     public void setIsAdmin(Boolean isAdmin) {
-        this.isAdmin = isAdmin;
+        // This method is kept for backward compatibility but should not be used
+        // Role should be set directly
+    }
+
+    public Boolean getIsSuperAdmin() {
+        return role == Role.SUPER_ADMIN;
+    }
+
+    public void setIsSuperAdmin(Boolean isSuperAdmin) {
+        // This method is kept for backward compatibility but should not be used
+        // Role should be set directly
     }
 }
