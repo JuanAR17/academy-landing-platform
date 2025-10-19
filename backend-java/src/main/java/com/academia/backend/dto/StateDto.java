@@ -1,11 +1,11 @@
 package com.academia.backend.dto;
 
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class StateDto {
     private Long id;
     private String name;
-    private List<CityDto> cities;
 
     // Getters and setters
     public Long getId() {
@@ -22,13 +22,5 @@ public class StateDto {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public List<CityDto> getCities() {
-        return cities;
-    }
-
-    public void setCities(List<CityDto> cities) {
-        this.cities = cities;
     }
 }

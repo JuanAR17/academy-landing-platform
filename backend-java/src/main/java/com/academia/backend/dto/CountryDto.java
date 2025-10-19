@@ -1,7 +1,8 @@
 package com.academia.backend.dto;
 
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class CountryDto {
     private Long id;
     private String name;
@@ -12,7 +13,6 @@ public class CountryDto {
     private String currency;
     private String currencyName;
     private String currencySymbol;
-    private List<StateDto> states;
 
     // Getters and setters
     public Long getId() {
@@ -85,13 +85,5 @@ public class CountryDto {
 
     public void setCurrencySymbol(String currencySymbol) {
         this.currencySymbol = currencySymbol;
-    }
-
-    public List<StateDto> getStates() {
-        return states;
-    }
-
-    public void setStates(List<StateDto> states) {
-        this.states = states;
     }
 }
