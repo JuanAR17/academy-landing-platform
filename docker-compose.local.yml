@@ -1,0 +1,23 @@
+services:
+  backend:
+    ports:
+      - "18081:8080"     # ← Backend accesible en http://localhost:8081
+    environment:
+      VIRTUAL_HOST:
+      LETSENCRYPT_HOST:
+
+  frontend:
+    # Si quieres probar el Nginx con el build (prod), publícalo en otro puerto:
+    ports:
+      - "8085:80"       # ← Angular estático en http://localhost:8085
+    environment:
+      VIRTUAL_HOST:
+      LETSENCRYPT_HOST:
+
+  reverse-proxy:
+    deploy:
+      replicas: 0
+  letsencrypt:
+    deploy:
+      replicas: 0
+

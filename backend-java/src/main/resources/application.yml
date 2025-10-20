@@ -21,8 +21,14 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
 
-app:
-  corsAllowed: ${CORS_ALLOWED_ORIGINS:} # coma-separado
+  mvc:
+    cors:
+      mappings:
+        "[/**]":
+          allowed-origins: "${CORS_ALLOWED_ORIGINS:http://localhost:4200}"
+          allowed-methods: "*"
+          allowed-headers: "*"
+          allow-credentials: true
 
 jwt:
   alg: ${JWT_ALG:HS256}
