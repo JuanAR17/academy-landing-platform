@@ -1,0 +1,11 @@
+services:
+  reverse-proxy:
+    deploy:
+      replicas: 0
+  letsencrypt:
+    deploy:
+      replicas: 0
+  frontend:
+    deploy:
+      replicas: 0
+
