@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
-import { HomeData } from '../../../core/services/home-data';
-import { DataFQS } from '../../../shared/interfaces/home-interfaces';
+import { HomeDataService } from '../../../core/services/homeDataServices';
+import { FQS } from '../../../shared/interfaces/home';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -10,9 +10,9 @@ import { CommonModule } from '@angular/common';
   styleUrl: './fqs.css'
 })
 export class Fqs {
-  private homeService = inject(HomeData);
+  private homeService = inject(HomeDataService);
 
-  fqs:DataFQS[] = [];
+  fqs:FQS[] = [];
   wrapped: number | null  = null;
 
   constructor() {}

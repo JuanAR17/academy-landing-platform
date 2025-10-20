@@ -1,8 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { TiltCardDirective } from '../../../shared/directives/tilt-card-directive';
 import { CommonModule } from '@angular/common';
-import { Services } from '../../../shared/interfaces/home-interfaces';
-import { HomeData } from '../../../core/services/home-data';
+import { Service } from '../../../shared/interfaces/home';
+import { HomeDataService } from '../../../core/services/homeDataServices';
 
 
 @Component({
@@ -12,9 +12,9 @@ import { HomeData } from '../../../core/services/home-data';
   styleUrl: './diplomado-masterclass.css'
 })
 export class DiplomadoMasterclass {
-  private homeService = inject(HomeData)
+  private homeService = inject(HomeDataService)
 
-  services:Services[] =[]
+  services:Service[] =[]
 
   constructor() {}
 

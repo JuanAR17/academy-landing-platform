@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
-import { HomeData } from '../../../core/services/home-data';
-import { DataInstructors } from '../../../shared/interfaces/home-interfaces';
+import { HomeDataService } from '../../../core/services/homeDataServices';
+import { Instructor } from '../../../shared/interfaces/home';
 
 @Component({
   selector: 'app-instructors',
@@ -9,9 +9,9 @@ import { DataInstructors } from '../../../shared/interfaces/home-interfaces';
   styleUrl: './instructors.css'
 })
 export class Instructors {
-  private homeService = inject(HomeData);
+  private homeService = inject(HomeDataService);
 
-  instructors:DataInstructors[] = [];
+  instructors:Instructor[] = [];
 
   constructor() {}
 

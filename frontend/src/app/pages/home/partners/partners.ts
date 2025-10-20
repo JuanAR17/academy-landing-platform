@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
-import { HomeData } from '../../../core/services/home-data';
-import { DataPartners } from '../../../shared/interfaces/home-interfaces';
+import { HomeDataService } from '../../../core/services/homeDataServices';
+import { Partner } from '../../../shared/interfaces/home';
 
 @Component({
   selector: 'app-partners',
@@ -9,9 +9,9 @@ import { DataPartners } from '../../../shared/interfaces/home-interfaces';
   styleUrl: './partners.css'
 })
 export class Partners {
-  private homeService = inject(HomeData);
+  private homeService = inject(HomeDataService);
 
-  partners: DataPartners[] = [];
+  partners: Partner[] = [];
 
   constructor() {}
 

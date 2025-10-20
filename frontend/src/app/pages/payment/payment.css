@@ -1,7 +1,13 @@
 .container-navbar{
   width: 100%;
   /* height: 12.5vh; */
-  background: linear-gradient(135deg, #081836 0%, #113370 50%, #0458d9 100%);
+  background: linear-gradient(-135deg, #081836 0%, #113370 50%, #0558D8 100%);
+}
+
+.aside-container-data{
+  width: 55%; 
+  margin: 40px 100px;
+  padding: 20px 100px 20px 40px;
 }
 
 .img-container{
@@ -24,96 +30,46 @@
   margin-left: 50px;
 }
 
-.aside-container{
-    min-height: 100vh;
-}
-
-.bg-black-blue{
-    width: 45%;
-    background: linear-gradient(180deg,rgba(0, 0, 0, 1) 0%, rgba(4, 16, 37, 1) 58%, rgba(6, 24, 55, 1) 100%);   
-}
-
-.signup-link p {
-    font-size: 18px;
-}
-
-.signup-link a {
-    color:#103371;
-    font-size: 18px;
-    text-decoration: none;
-    cursor: pointer;
-    transition: color 0.3s;
-}
-
-.signup-link a:hover {
-    color: #065AD9;
-    text-decoration: underline;
-}
-
-.signup-form {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-}
-
-.form-group {
-  position: relative;
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  position: absolute;
-  top: 15px;
-  left: 0;
-  color: #041025;
-  font-weight: 600;
+.no-clickable{
   pointer-events: none;
-  transition: all 0.2s ease-out;
+  cursor: default;
+  opacity: 0.8;
 }
 
-.form-group input {
-  width: 100%;
-  padding: 20px 0 5px;
-  border: none;
-  background-color: transparent !important;
-  border-bottom: 2px solid #041025;
-  color: #041025;
-  transition: all 0.2s ease-out;
-  outline: none;
+.btn-paiment-type{
+  background-color: #fbfbfb;
+  border: #d2d2d2 solid 1px;
+  font-size: 16px;
+  filter: grayscale(100%); 
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.3s ease-in-out , border 0.3s ease-in-out, background-color 0.3s ease-in-out;
+  color: #555; 
 }
 
-.form-group input:autofill, input:autofill:focus{
-    background-color: transparent !important;
+.DebitoCredito{
+  font-size: 16px;
 }
 
-.form-group input:focus, input:valid {
-  border-bottom: 2px solid #065AD9;
-  color: #065AD9;
+.btn-paiment-type:hover, 
+.btn-paiment-type.active-button-style {
+  background-color: #0559d80f;
+  border: #113271 solid 1px;
+  filter: grayscale(0%);
+  color: #113271; 
 }
 
-.form-group input:focus + label,
-.form-group input:not(:placeholder-shown) + label,
-.form-group input:valid + label {
-  top: 0;
-  transform: translateY(-10px);
-  color: #065AD9;
+.btn-paiment-type p {
+    color: inherit;
 }
 
-.form-group input:invalid:not(:placeholder-shown) {
-  border-bottom: 2px solid #E63946;
-  color: #E63946;
+.payment-view {
+    display: none;
 }
 
-.form-group input:invalid:not(:placeholder-shown) + label {
-  top: 0;
-  transform: translateY(-10px);
-  color: #E63946;
+.payment-view.active {
+    display: block;
 }
 
-.signup-button{
-    width: 100%;
-    padding: 15px 30px;
-    font-size: 28px;
-    transition: all 0.3s ease-in-out ;
-}

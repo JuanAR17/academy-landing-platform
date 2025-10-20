@@ -1,8 +1,8 @@
 nav {
     padding: 0 100px;
     background: transparent;
-    transition: background-size 0.5s ease-in-out, padding 0.4s ease-in-out;
-    background-image: linear-gradient(135deg, #081836 0%, #113370 50%, #0458d9 100%);
+    background: linear-gradient(-135deg, #081836 0%, #113370 50%, #0458d9 100%);
+    transition: background-size 0.3s ease-in-out, padding 0.4s ease-in-out;
     background-size: 0% 100%;
     background-position: 50% 0;
     background-repeat: no-repeat;
@@ -33,8 +33,8 @@ nav {
 }
 
 .scrolled {
-  background: linear-gradient(135deg, #081836 0%, #113370 50%, #0458d9 100%);
-  transition: ease-in-out 0.4s;
+  background: linear-gradient(-135deg, #081836 0%, #113370 50%, #0458d9 100%);
+  transition: ease-in-out 0.3s;
   background-size: 100% 100%;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
   background-repeat: no-repeat;

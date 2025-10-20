@@ -1,0 +1,22 @@
+[
+  {
+    "id" : 1,
+    "type" : "Cédula de Ciudadanía", 
+    "value" : "CC"
+  },
+  {
+    "id" : 2,
+    "type" : "Tarjeta de identidad", 
+    "value" : "TI"
+  },
+  {
+    "id" : 3,
+    "type" : "Cédula de Extranjería", 
+    "value" : "CE"
+  },
+  {
+    "id" : 4,
+    "type" : "Permiso Especial", 
+    "value" : "PEP"
+  }
+]
