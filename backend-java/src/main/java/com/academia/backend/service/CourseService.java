@@ -8,8 +8,10 @@ import com.academia.backend.repo.CourseRepo;
 import com.academia.backend.repo.UserRepo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
@@ -41,18 +43,33 @@ public class CourseService {
         this.logService = logService;
     }
 
-    // Crear curso (solo profesores)
-    public CourseDto createCourse(CreateCourseIn input, UUID teacherId) {
-        logService.logInfo(MODULE_COURSE, ACTION_CREATE_COURSE, "Creando nuevo curso: " + input.title(), teacherId);
+    // Crear curso (profesores y administradores)
+    public CourseDto createCourse(CreateCourseIn input, UUID creatorId) {
+        logService.logInfo(MODULE_COURSE, ACTION_CREATE_COURSE, "Creando nuevo curso: " + input.title(), creatorId);
 
-        UserEntity teacher = userRepo.findById(teacherId)
+        UserEntity creator = userRepo.findById(creatorId)
                 .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
 
-        if (teacher.getRole() != Role.TEACHER && teacher.getRole() != Role.ADMIN
-                && teacher.getRole() != Role.SUPER_ADMIN) {
+        if (creator.getRole() != Role.TEACHER && creator.getRole() != Role.ADMIN
+                && creator.getRole() != Role.SUPER_ADMIN) {
             logService.logError(MODULE_COURSE, ACTION_CREATE_COURSE, "Usuario no autorizado para crear cursos",
-                    teacherId);
+                    creatorId);
             throw new IllegalArgumentException(ERROR_ONLY_TEACHERS_CREATE);
+        }
+
+        UserEntity instructor = null;
+        if (input.instructorId() != null) {
+            instructor = userRepo.findById(input.instructorId())
+                    .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
+            // Verificar que el instructor sea profesor
+            if (instructor.getRole() != Role.TEACHER && instructor.getRole() != Role.ADMIN
+                    && instructor.getRole() != Role.SUPER_ADMIN) {
+                throw new IllegalArgumentException("El instructor debe ser un profesor o administrador");
+            }
+        } else {
+            if (creator.getRole() != Role.ADMIN && creator.getRole() != Role.SUPER_ADMIN) {
+                instructor = creator;
+            }
         }
 
         CourseEntity course = new CourseEntity();
@@ -61,7 +78,7 @@ public class CourseService {
         course.setShortDescription(input.shortDescription());
         course.setThumbnailUrl(input.thumbnailUrl());
         course.setVideoPreviewUrl(input.videoPreviewUrl());
-        course.setTeacher(teacher);
+        course.setTeacher(instructor);
         course.setPrice(input.price());
         course.setDurationHours(input.durationHours());
         course.setDifficultyLevel(input.difficultyLevel());
@@ -80,7 +97,7 @@ public class CourseService {
 
         CourseEntity saved = courseRepo.save(course);
         logService.logInfo(MODULE_COURSE, ACTION_CREATE_COURSE, "Curso creado exitosamente: " + saved.getId(),
-                teacherId);
+                creatorId);
 
         return toDto(saved);
     }
@@ -90,16 +107,17 @@ public class CourseService {
         logService.logInfo(MODULE_COURSE, ACTION_UPDATE_COURSE, "Actualizando curso: " + courseId, userId);
 
         CourseEntity course = courseRepo.findById(courseId)
-                .orElseThrow(() -> new IllegalArgumentException(ERROR_COURSE_NOT_FOUND));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ERROR_COURSE_NOT_FOUND));
 
         UserEntity user = userRepo.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ERROR_USER_NOT_FOUND));
 
         // Solo el profesor del curso o admin pueden actualizar
-        if (!course.getTeacher().getId().equals(userId) && user.getRole() != Role.ADMIN) {
+        if (course.getTeacher() != null && !course.getTeacher().getId().equals(userId)
+                && user.getRole() != Role.ADMIN) {
             logService.logError(MODULE_COURSE, ACTION_UPDATE_COURSE, "Usuario no autorizado para actualizar curso",
                     userId);
-            throw new IllegalArgumentException(ERROR_NOT_AUTHORIZED_UPDATE);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ERROR_NOT_AUTHORIZED_UPDATE);
         }
 
         if (input.title() != null)
@@ -114,10 +132,10 @@ public class CourseService {
             course.setVideoPreviewUrl(input.videoPreviewUrl());
         if (input.price() != null)
             course.setPrice(input.price());
-        if (input.durationHours() != null)
-            course.setDurationHours(input.durationHours());
-        if (input.difficultyLevel() != null)
-            course.setDifficultyLevel(input.difficultyLevel());
+        if (input.duration() != null)
+            course.setDurationHours(input.duration());
+        if (input.level() != null)
+            course.setDifficultyLevel(input.level());
         if (input.maxStudents() != null)
             course.setMaxStudents(input.maxStudents());
         if (input.category() != null)
@@ -128,6 +146,28 @@ public class CourseService {
             course.setRequirements(input.requirements().toArray(new String[0]));
         if (input.learningOutcomes() != null)
             course.setLearningOutcomes(input.learningOutcomes().toArray(new String[0]));
+        if (input.instructorId() != null) {
+            UserEntity instructor = userRepo.findById(input.instructorId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ERROR_USER_NOT_FOUND));
+            // Verificar que el instructor sea profesor o admin
+            if (instructor.getRole() != Role.TEACHER && instructor.getRole() != Role.ADMIN
+                    && instructor.getRole() != Role.SUPER_ADMIN) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "El instructor debe ser un profesor o administrador");
+            }
+            course.setTeacher(instructor);
+            // Publicar automáticamente cuando se asigna instructor
+            course.setStatus(CourseStatus.PUBLISHED);
+        }
+
+        if (input.status() != null) {
+            CourseStatus newStatus = CourseStatus.valueOf(input.status().toUpperCase());
+            if (newStatus == CourseStatus.PUBLISHED && course.getTeacher() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Debe asignar un instructor antes de publicar el curso");
+            }
+            course.setStatus(newStatus);
+        }
 
         CourseEntity saved = courseRepo.save(course);
         logService.logInfo(MODULE_COURSE, ACTION_UPDATE_COURSE, "Curso actualizado: " + courseId, userId);
@@ -145,6 +185,15 @@ public class CourseService {
         UserEntity user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
 
+        // Validar que el curso tenga un instructor asignado antes de publicar
+        if (course.getTeacher() == null) {
+            logService.logError(MODULE_COURSE, ACTION_PUBLISH_COURSE,
+                    "No se puede publicar un curso sin instructor asignado", userId);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Debe asignar un instructor antes de publicar el curso");
+        }
+
+        // Verificar autorización: el instructor del curso o admin
         if (!course.getTeacher().getId().equals(userId) && user.getRole() != Role.ADMIN) {
             logService.logError(MODULE_COURSE, ACTION_PUBLISH_COURSE, "Usuario no autorizado", userId);
             throw new IllegalArgumentException(ERROR_NOT_AUTHORIZED);
@@ -171,6 +220,13 @@ public class CourseService {
     @Transactional(readOnly = true)
     public Page<CourseDto> getPublishedCourses(Pageable pageable) {
         return courseRepo.findByStatusOrderByCreatedAtDesc(CourseStatus.PUBLISHED, pageable)
+                .map(this::toDto);
+    }
+
+    // Listar todos los cursos (solo para admins)
+    @Transactional(readOnly = true)
+    public Page<CourseDto> getAllCourses(Pageable pageable) {
+        return courseRepo.findAll(pageable)
                 .map(this::toDto);
     }
 
@@ -215,9 +271,11 @@ public class CourseService {
         UserEntity user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
 
-        if (!course.getTeacher().getId().equals(userId) && user.getRole() != Role.ADMIN) {
-            logService.logError(MODULE_COURSE, ACTION_DELETE_COURSE, "Usuario no autorizado", userId);
-            throw new IllegalArgumentException(ERROR_NOT_AUTHORIZED);
+        // Solo administradores pueden eliminar cursos
+        if (user.getRole() != Role.ADMIN && user.getRole() != Role.SUPER_ADMIN) {
+            logService.logError(MODULE_COURSE, ACTION_DELETE_COURSE, "Solo administradores pueden eliminar cursos",
+                    userId);
+            throw new IllegalArgumentException("Solo administradores pueden eliminar cursos");
         }
 
         course.setStatus(CourseStatus.ARCHIVED);
@@ -228,6 +286,9 @@ public class CourseService {
 
     // Convertir a DTO
     private CourseDto toDto(CourseEntity course) {
+        UUID teacherId = course.getTeacher() != null ? course.getTeacher().getId() : null;
+        String teacherName = course.getTeacher() != null ? course.getTeacher().getFirstName() + " " +
+                (course.getTeacher().getLastName() != null ? course.getTeacher().getLastName() : "") : null;
         return new CourseDto(
                 course.getId(),
                 course.getTitle(),
@@ -235,9 +296,8 @@ public class CourseService {
                 course.getShortDescription(),
                 course.getThumbnailUrl(),
                 course.getVideoPreviewUrl(),
-                course.getTeacher().getId(),
-                course.getTeacher().getFirstName() + " "
-                        + (course.getTeacher().getLastName() != null ? course.getTeacher().getLastName() : ""),
+                teacherId,
+                teacherName,
                 course.getPrice(),
                 course.getDurationHours(),
                 course.getDifficultyLevel(),

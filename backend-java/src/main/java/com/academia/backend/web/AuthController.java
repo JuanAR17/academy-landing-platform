@@ -1,6 +1,7 @@
 package com.academia.backend.web;
 
 import com.academia.backend.domain.Address;
+import com.academia.backend.domain.Role;
 import com.academia.backend.domain.SessionEntity;
 import com.academia.backend.domain.UserEntity;
 import com.academia.backend.dto.ChangePasswordIn;
@@ -8,12 +9,14 @@ import com.academia.backend.dto.LoginIn;
 import com.academia.backend.dto.RegisterIn;
 import com.academia.backend.dto.TokenOut;
 import com.academia.backend.dto.UserDto;
+import com.academia.backend.dto.in.CreateUserIn;
 import com.academia.backend.repo.RoleRepo;
 import com.academia.backend.repo.SessionRepo;
 import com.academia.backend.repo.UserRepo;
 import com.academia.backend.service.AuthService;
 import com.academia.backend.service.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -22,7 +25,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -102,44 +104,74 @@ public class AuthController {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de usuario ya está en uso");
     }
 
-    return createUserAndSession(in, false, ua, request);
+    return createUserAndSession(in, true, ua, request);
   }
 
-  @PostMapping("/register-admin")
-  @PreAuthorize("hasRole('SUPER_ADMIN')")
-  @Operation(summary = "Registro de nuevo administrador (solo para super administradores)")
-  public ResponseEntity<TokenOut> registerAdmin(@Valid @RequestBody RegisterIn in,
+  @PostMapping("/create-user")
+  @SecurityRequirement(name = "bearerAuth")
+  @Operation(summary = "Crear usuario (solo administradores)")
+  public ResponseEntity<TokenOut> createUser(@Valid @RequestBody CreateUserIn input,
+      @RequestHeader("Authorization") String authHeader,
       @RequestHeader(value = "User-Agent", required = false) String ua, HttpServletRequest request) {
-    // Verificar que el usuario autenticado sea super administrador
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication == null || !authentication.isAuthenticated()) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
+
+    UUID creatorId = jwt.extractUserIdFromHeader(authHeader);
+    UserDto creator = auth.getUserInfo(creatorId);
+
+    // Verificar que el creador sea admin
+    if (!Boolean.TRUE.equals(creator.getIsAdmin())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo administradores pueden crear usuarios");
     }
 
-    String userIdStr = authentication.getName();
-    UUID currentUserId;
-    try {
-      currentUserId = UUID.fromString(userIdStr);
-    } catch (IllegalArgumentException e) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido");
-    }
-
-    // Verificar permisos de super admin
-    UserDto currentUser = auth.getUserInfo(currentUserId);
-    if (!Boolean.TRUE.equals(currentUser.getIsSuperAdmin())) {
+    // Validar restricciones de roles
+    if (creator.getRole() == Role.ADMIN && (input.role() == Role.ADMIN || input.role() == Role.SUPER_ADMIN)) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-          "Solo super administradores pueden registrar administradores");
+          "Los administradores normales no pueden crear administradores");
     }
 
-    if (users.findByEmail(in.getCorreo()).isPresent()) {
+    // Verificar que el email no exista
+    if (users.findByEmail(input.email()).isPresent()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El email ya está registrado");
     }
 
-    if (users.findByUsername(in.getUsername()).isPresent()) {
+    // Verificar que el username no exista
+    if (users.findByUsername(input.username()).isPresent()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de usuario ya está en uso");
     }
 
-    return createUserAndSession(in, true, ua, request);
+    return createUserWithRole(input, ua, request);
+  }
+
+  private ResponseEntity<TokenOut> createUserWithRole(CreateUserIn input,
+      @RequestHeader(value = "User-Agent", required = false) String ua, HttpServletRequest request) {
+    UserEntity user = new UserEntity();
+    user.setEmail(input.email());
+    user.setUsername(input.username());
+    user.setPasswordHash(auth.hashPassword(input.password()));
+    user.setFirstName(input.firstName());
+    user.setLastName(input.lastName());
+    user.setPhone(input.phone());
+    user.setNationality(""); // No incluido en CreateUserIn, dejar vacío por ahora
+
+    // Assign role based on input
+    var roleEntity = roles.findByName(input.role().name())
+        .orElseThrow(() -> new RuntimeException("Role not found: " + input.role().name()));
+    user.setRoleEntity(roleEntity);
+    user = users.save(user);
+
+    // Crea una sesión automáticamente
+    String refreshPlain = auth.genRandomUrlToken();
+    byte[] rth = auth.hmacRefresh(refreshPlain);
+    InetAddress clientIp = getClientIp(request);
+    SessionEntity row = auth.newSession(user.getId(), rth, ua, clientIp);
+
+    String csrf = auth.genRandomUrlToken();
+    String access = jwt.mintAccess(user.getId().toString(), row.getId().toString());
+    TokenOut out = new TokenOut(access, csrf, user.getId());
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(HttpHeaders.SET_COOKIE, buildCookie(RT_COOKIE, refreshPlain, true, 60L * 60 * 24 * 60));
+    headers.add(HttpHeaders.SET_COOKIE, buildCookie(CSRF_COOKIE, csrf, false, 60L * 60 * 24 * 60));
+    return ResponseEntity.status(HttpStatus.CREATED).headers(headers).body(out);
   }
 
   private ResponseEntity<TokenOut> createUserAndSession(RegisterIn in, boolean isAdmin,
@@ -403,27 +435,23 @@ public class AuthController {
     return null;
   }
 
+  // Helper method to get client IP
   private InetAddress getClientIp(HttpServletRequest request) {
-    String xForwardedFor = request.getHeader("X-Forwarded-For");
-    if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-      try {
-        return InetAddress.getByName(xForwardedFor.split(",")[0].trim());
-      } catch (Exception e) {
-        // Ignore and try next
-      }
-    }
-    String xRealIp = request.getHeader("X-Real-IP");
-    if (xRealIp != null && !xRealIp.isEmpty()) {
-      try {
-        return InetAddress.getByName(xRealIp);
-      } catch (Exception e) {
-        // Ignore and try next
-      }
-    }
     try {
-      return InetAddress.getByName(request.getRemoteAddr());
+      String ip = request.getHeader("X-Forwarded-For");
+      if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+        ip = request.getHeader("X-Real-IP");
+      }
+      if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+        ip = request.getRemoteAddr();
+      }
+      return InetAddress.getByName(ip);
     } catch (Exception e) {
-      return null;
+      try {
+        return InetAddress.getLocalHost();
+      } catch (Exception ex) {
+        return null;
+      }
     }
   }
 }

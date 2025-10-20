@@ -28,7 +28,7 @@ public class CourseEntity {
     private String videoPreviewUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "instructor_id", nullable = false)
+    @JoinColumn(name = "instructor_id", nullable = true)
     private UserEntity teacher;
 
     @Column(nullable = false, precision = 10, scale = 2)
