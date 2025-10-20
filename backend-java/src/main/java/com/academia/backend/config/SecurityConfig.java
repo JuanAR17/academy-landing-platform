@@ -20,7 +20,8 @@ public class SecurityConfig {
     http.authorizeHttpRequests(auth -> auth
         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh", "/api/auth/check",
             "/api/auth/logout",
-            "/health", "/ingest", "/api/locations/**", "/api/courses", "/api/courses/**",
+            "/health", "/ip", "/ingest", "/api/locations/**", "/api/courses", "/api/courses/**",
+            "/api/epayco/**", "/api/payments/**",
             "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
         .permitAll()
         .anyRequest().authenticated());

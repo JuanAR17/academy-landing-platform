@@ -11,12 +11,12 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update        # crea/actualiza tablas si no existen (útil para arrancar)
+      ddl-auto: none # Deshabilitar para que solo Flyway maneje el esquema
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   flyway:
-    enabled: false
+    enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
     baseline-version: 0
@@ -40,6 +40,11 @@ cookies:
   sameSite: ${COOKIE_SAMESITE:Strict}
   domain: ${COOKIE_DOMAIN:}
   path: ${COOKIE_PATH:/}
+
+epayco:
+  base-url: ${BASE_URL_EPAYCO}
+  public-key: ${PUBLIC_EPAYCO_KEY}
+  private-key: ${PRIVATE_EPAYCO_KEY}
 
 springdoc:
   swagger-ui:
