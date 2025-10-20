@@ -106,11 +106,11 @@ public class AuthController {
   }
 
   @PostMapping("/register-admin")
-  @PreAuthorize("hasRole('ADMIN')")
-  @Operation(summary = "Registro de nuevo administrador (solo para administradores)")
+  @PreAuthorize("hasRole('SUPER_ADMIN')")
+  @Operation(summary = "Registro de nuevo administrador (solo para super administradores)")
   public ResponseEntity<TokenOut> registerAdmin(@Valid @RequestBody RegisterIn in,
       @RequestHeader(value = "User-Agent", required = false) String ua, HttpServletRequest request) {
-    // Verificar que el usuario autenticado sea administrador
+    // Verificar que el usuario autenticado sea super administrador
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null || !authentication.isAuthenticated()) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
@@ -124,11 +124,11 @@ public class AuthController {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido");
     }
 
-    // Verificar permisos de admin
+    // Verificar permisos de super admin
     UserDto currentUser = auth.getUserInfo(currentUserId);
-    if (!Boolean.TRUE.equals(currentUser.getIsAdmin())) {
+    if (!Boolean.TRUE.equals(currentUser.getIsSuperAdmin())) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-          "Solo administradores pueden registrar otros administradores");
+          "Solo super administradores pueden registrar administradores");
     }
 
     if (users.findByEmail(in.getCorreo()).isPresent()) {
