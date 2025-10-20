@@ -77,3 +77,7 @@ export interface Banks{
   id: number,
   name: string,
 }
+
+export interface EpaycoJwtToken{
+  token: string
+}

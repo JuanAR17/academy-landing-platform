@@ -54,7 +54,7 @@ export class Payment implements OnInit, AfterViewInit{
     this.getDocumentTypesService();
     this.getCountrysService();
     this.tokenLogin();
-
+    this.getBanks();
   }
 
   ngAfterViewInit() {
@@ -113,6 +113,8 @@ export class Payment implements OnInit, AfterViewInit{
   showView(viewId: string, event: Event){
     event.preventDefault();
 
+    console.log(viewId)
+
     this.paymentViews.forEach(view => {
         view.nativeElement.classList.remove('active');
     });
@@ -138,23 +140,18 @@ export class Payment implements OnInit, AfterViewInit{
   banksArray = signal< Banks[] | null>([]);
 
   tokenLogin(){
-    this.epaycoService.getTokenLogin().subscribe( (data) => {
-      console.log(data)
-    })
+    this.epaycoService.getTokenLogin()
   }
 
   getBanks(){
     this.epaycoService.getAllBanks().subscribe( (data) => {
-      this.banksArray.set(data)
-      console.log("Bancos", data)
+      this.banksArray.set(data.data)
+      console.log("Bancos", data.data)
     })
   }
 
 
-
-
-
-
-
+  startNumber = 2;
+  arrayForLoop: number[] = Array.from({ length: 10 }, (_, i) => i + this.startNumber);
 }
  
