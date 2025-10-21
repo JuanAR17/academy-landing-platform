@@ -1,72 +1,74 @@
 -- V6__users_role_to_role_id.sql
--- Normaliza 'users.role' -> 'users.role_id' (FK a roles.id). Idempotente.
+-- Asegurar extensiones útiles (no falla si ya están)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS citext;
 
--- 1) Asegura columna role_id
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema='public' AND table_name='users' AND column_name='role_id'
-  ) THEN
-    ALTER TABLE users ADD COLUMN role_id BIGINT;
-  END IF;
-END $$;
+-- 1) Crear tabla roles si no existe
+CREATE TABLE IF NOT EXISTS roles (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(50) NOT NULL UNIQUE,
+  description TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
--- 2) Si existe la columna antigua 'role', migra sus valores a role_id
+-- 2) Semilla de roles (no duplica gracias a ON CONFLICT)
+INSERT INTO roles (name, description) VALUES
+  ('SUPER_ADMIN', 'Super administrador con permisos totales'),
+  ('ADMIN',       'Administrador del sistema'),
+  ('TEACHER',     'Profesor'),
+  ('STUDENT',     'Estudiante')
+ON CONFLICT (name) DO NOTHING;
+
+-- 3) Añadir columna role_id en users si no existe
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role_id BIGINT;
+
+-- 4) Backfill: si existe columna legacy "role", mapear a role_id
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema='public' AND table_name='users' AND column_name='role'
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'users' AND column_name = 'role'
   ) THEN
-    -- Primero intenta mapear por nombre (roles.name = 'SUPER_ADMIN'/'ADMIN'/...)
     UPDATE users u
     SET role_id = r.id
     FROM roles r
     WHERE u.role_id IS NULL
-      AND UPPER(u.role::text) = r.name;
+      AND CAST(u.role AS TEXT) = r.name;  -- por si era enum o varchar
 
-    -- (Opcional) Si alguien guardó números en 'role', mapea por id de forma segura
+    -- Como fallback, asignar STUDENT a los que queden sin rol
     UPDATE users u
     SET role_id = r.id
     FROM roles r
-    WHERE u.role_id IS NULL
-      AND (u.role::text ~ '^[0-9]+$')
-      AND (u.role::bigint) = r.id;
-
-    -- Fallback: cualquier fila que siga NULL, pásala a STUDENT
-    UPDATE users
-      SET role_id = (SELECT id FROM roles WHERE name = 'STUDENT' LIMIT 1)
-    WHERE role_id IS NULL;
-
-    -- Quita la columna vieja
-    ALTER TABLE users DROP COLUMN IF EXISTS role;
+    WHERE u.role_id IS NULL AND r.name = 'STUDENT';
+  ELSE
+    -- Si no hay columna "role" y role_id está NULL, también asegurar STUDENT
+    UPDATE users u
+    SET role_id = r.id
+    FROM roles r
+    WHERE u.role_id IS NULL AND r.name = 'STUDENT';
   END IF;
-END $$;
+END$$;
 
--- 3) Crea la FK si no existe
+-- 5) Añadir la FK si no existe
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint
-    WHERE conrelid = 'public.users'::regclass
-      AND contype  = 'f'
-      AND conname  = 'users_role_id_fkey'
+    WHERE conname = 'fk_users_role_id_roles'
   ) THEN
     ALTER TABLE users
-      ADD CONSTRAINT users_role_id_fkey
+      ADD CONSTRAINT fk_users_role_id_roles
       FOREIGN KEY (role_id) REFERENCES roles(id);
   END IF;
-END $$;
+END$$;
 
--- 4) NOT NULL sólo si ya no quedan nulos
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM users WHERE role_id IS NULL) THEN
-    ALTER TABLE users ALTER COLUMN role_id SET NOT NULL;
-  END IF;
-END $$;
-
--- 5) Índice útil
+-- 6) Índice a role_id (si no existe)
 CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
+
+-- 7) (Opcional) Enforzar NOT NULL cuando estés seguro de que todos tienen role_id
+-- ALTER TABLE users ALTER COLUMN role_id SET NOT NULL;
+
+-- 8) Borrar la columna antigua "role" si existe
+ALTER TABLE users DROP COLUMN IF EXISTS role;
 
