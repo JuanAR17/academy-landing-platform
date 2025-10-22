@@ -1,14 +1,15 @@
 package com.academia.backend.service;
 
+import com.academia.backend.config.EpaycoProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import org.springframework.http.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Base64;
@@ -16,81 +17,74 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class EpaycoAuthService {
+  private static final Logger log = LoggerFactory.getLogger(EpaycoAuthService.class);
 
-    private static final Logger logger = LoggerFactory.getLogger(EpaycoAuthService.class);
+  private final WebClient client;
+  private final EpaycoProperties props;
 
-    private final WebClient http;
-    private final com.academia.backend.config.EpaycoProperties props;
+  private final AtomicReference<String> cachedToken = new AtomicReference<>();
+  private volatile Instant expiresAt = Instant.EPOCH;
 
-    private final AtomicReference<String> cachedToken = new AtomicReference<>(null);
-    private volatile Instant expiresAt = Instant.EPOCH; // vence en el pasado por defecto
+  public EpaycoAuthService(@Qualifier("epaycoWebClient") WebClient client,
+                           EpaycoProperties props) {
+    this.client = client;
+    this.props = props;
+  }
 
-    public EpaycoAuthService(WebClient.Builder builder, com.academia.backend.config.EpaycoProperties props) {
-        this.http = builder.baseUrl(props.getBaseUrl()).build();
-        this.props = props;
+  public Mono<String> getToken() {
+    // 1) devolver de caché si sigue vigente
+    if (Instant.now().isBefore(expiresAt)) {
+      String t = cachedToken.get();
+      if (t != null && !t.isBlank()) {
+        return Mono.just(t);
+      }
     }
 
-    public Mono<String> getToken() {
-        logger.info("Verificando si hay token válido en caché");
-        // Si tenemos token válido, úsalo
-        if (cachedToken.get() != null && Instant.now().isBefore(expiresAt)) {
-            logger.info("Usando token de caché");
-            return Mono.just(cachedToken.get());
-        }
-        logger.info("No hay token válido, realizando petición de login a ePayco");
-        // Si no, login usando Basic Auth
-        String credentials = props.getPublicKey() + ":" + props.getPrivateKey();
-        String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes());
+    // 2) pedir a ePayco con Basic Auth
+    return client.post()
+        .uri("/login")
+        .headers(h -> h.setBasicAuth(props.getPublicKey(), props.getPrivateKey()))
+        .retrieve()
+        .onStatus(HttpStatusCode::isError, r ->
+            r.bodyToMono(String.class)
+             .map(body -> new IllegalStateException("ePayco /login " + r.statusCode() + " -> " + body))
+        )
+        .bodyToMono(JsonNode.class)
+        .map(json -> {
+          // algunas respuestas vienen en token, otras en data.token o access_token
+          String token = first(
+              json.path("token").asText(null),
+              json.path("data").path("token").asText(null),
+              json.path("access_token").asText(null)
+          );
+          if (token == null) {
+            throw new IllegalStateException("Respuesta sin token: " + json);
+          }
+          cacheWithExpIfJwt(token);
+          return token;
+        });
+  }
 
-        return http.post()
-                .uri("/login")
-                .header("Authorization", "Basic " + encodedCredentials)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("{}") // Body vacío ya que la auth va en el header
-                .retrieve()
-                .bodyToMono(JsonNode.class)
-                .map(json -> {
-                    logger.info("Respuesta de login recibida: {}", json);
-                    // ePayco responde { "token": "..." }
-                    String token = getFirstNonNull(
-                            json.path("token").asText(null),
-                            json.path("data").path("token").asText(null),
-                            json.path("access_token").asText(null));
-                    if (token == null) {
-                        logger.error("No se pudo leer el token de la respuesta: {}", json);
-                        throw new IllegalStateException("No se pudo leer el token de la respuesta de login: " + json);
-                    }
-                    logger.info("Token obtenido exitosamente");
-                    cachedToken.set(token);
+  private static String first(String... vals) {
+    for (String v : vals) if (v != null && !v.isBlank()) return v;
+    return null;
+  }
 
-                    // Si el token es JWT y trae exp (opcional):
-                    try {
-                        String[] parts = token.split("\\.");
-                        if (parts.length == 3) {
-                            String payloadJson = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
-                            JsonNode payload = JsonMapper.builder().build().readTree(payloadJson);
-                            long exp = payload.path("exp").asLong(0);
-                            if (exp > 0) {
-                                // refrescar 60s antes de expirar
-                                expiresAt = Instant.ofEpochSecond(exp).minusSeconds(60);
-                            } else {
-                                expiresAt = Instant.now().plusSeconds(25 * 60); // fallback: 25 min
-                            }
-                        } else {
-                            expiresAt = Instant.now().plusSeconds(25 * 60);
-                        }
-                    } catch (Exception e) {
-                        expiresAt = Instant.now().plusSeconds(25 * 60);
-                    }
-
-                    return token;
-                });
+  private void cacheWithExpIfJwt(String token) {
+    cachedToken.set(token);
+    try {
+      String[] parts = token.split("\\.");
+      if (parts.length == 3) {
+        String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
+        long exp = JsonMapper.builder().build().readTree(payload).path("exp").asLong(0);
+        expiresAt = (exp > 0)
+            ? Instant.ofEpochSecond(exp).minusSeconds(60)  // refrescar 60s antes
+            : Instant.now().plusSeconds(25 * 60);
+      } else {
+        expiresAt = Instant.now().plusSeconds(25 * 60);
+      }
+    } catch (Exception ignore) {
+      expiresAt = Instant.now().plusSeconds(25 * 60);
     }
-
-    private static String getFirstNonNull(String... vals) {
-        for (String v : vals)
-            if (v != null && !v.isBlank())
-                return v;
-        return null;
-    }
+  }
 }

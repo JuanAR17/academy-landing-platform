@@ -56,7 +56,7 @@ public class EpaycoController {
     @GetMapping("/token")
     @Operation(summary = "Obtener token de autenticación", description = "Obtiene el token actual de ePayco, realizando login si es necesario")
     public Mono<Map<String, String>> getToken() {
-        return auth.getToken().map(token -> Map.of("token", token));
+        return auth.getToken().map(t -> Map.of("token", t));
     }
 
     @GetMapping("/payment-methods")

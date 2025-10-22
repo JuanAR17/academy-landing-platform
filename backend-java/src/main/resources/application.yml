@@ -50,9 +50,9 @@ cookies:
   path: ${COOKIE_PATH:/}
 
 epayco:
-  base-url: ${BASE_URL_EPAYCO}
-  public-key: ${PUBLIC_EPAYCO_KEY}
-  private-key: ${PRIVATE_EPAYCO_KEY}
+  base-url: ${EPAYCO_BASE_URL:https://apify.epayco.co}
+  public-key: ${EPAYCO_PUBLIC_KEY:?EPAYCO_PUBLIC_KEY is required}
+  private-key: ${EPAYCO_PRIVATE_KEY:?EPAYCO_PRIVATE_KEY is required}
 
 springdoc:
   swagger-ui:
