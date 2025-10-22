@@ -57,6 +57,9 @@ epayco:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+    doc-expansion: none           # none | list | full
+    default-model-expand-depth: 0 # no expandir modelos por defecto
+    default-models-expand-depth: 0
   api-docs:
     path: /v3/api-docs
 
