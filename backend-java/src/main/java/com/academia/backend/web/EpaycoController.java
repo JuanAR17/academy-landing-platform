@@ -48,33 +48,51 @@ public class EpaycoController {
         return epayco.listPaymentMethods();
     }
 
-    @GetMapping("/payment/{transactionId}/status")
-    @Operation(summary = "Consultar estado de pago", description = "Obtiene el estado de una transacción de pago")
-    public Mono<JsonNode> getPaymentStatus(@PathVariable String transactionId) {
-        return epayco.getPaymentStatus(transactionId);
+    @GetMapping("/payment/{referencePayco}/status")
+    @Operation(
+        summary = "Consultar estado de pago",
+        description = "Consulta el detalle de la transacción en ePayco usando referencePayco. "
+                    + "El backend envía GET /transaction/detail con body {\"filter\":{\"referencePayco\":..}} y maneja el Bearer automáticamente."
+    )
+    @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Respuesta de ePayco (éxito o error en JSON)",
+        content = @Content(mediaType = "application/json",
+        examples = @ExampleObject(
+            name = "Ejemplo éxito",
+            value = """
+            {
+            "success": true,
+            "titleResponse": "Successful consult",
+            "data": {
+                "transaction": { "status": true, "object": "payment", "data": { "ref_payco": 315160539, "estado": "Aprobada" } }
+            }
+            }
+            """
+        )
+        )
+    )
+    })
+    public Mono<JsonNode> getPaymentStatus(@PathVariable String referencePayco) {
+        return epayco.getTransactionDetail(referencePayco);
     }
 
-    @GetMapping("/token")
-    @Operation(summary = "Obtener token de autenticación (debug)",
-               description = "Obtiene el Bearer actual de ePayco, realizando login si es necesario")
-    public Mono<Map<String, String>> getToken() {
-        return auth.getToken().map(t -> Map.of("token", t));
+    // -----------------------------Tipos de documentos.-----------------------------
+
+    @GetMapping("/document-types")
+    @Operation(
+        summary = "Listar tipos de documentos",
+        description = "Proxy a ePayco {{url_apify}}/type/documents. "
+                    + "El backend inyecta automáticamente el Bearer obtenido vía /login."
+    )
+    @ApiResponse(responseCode = "200", description = "OK",
+        content = @Content(mediaType = "application/json"))
+    public Mono<JsonNode> listDocumentTypes() {
+        return epayco.listDocumentTypes();
     }
 
-    @GetMapping("/test")
-    @Operation(summary = "Endpoint de prueba", description = "Endpoint simple para verificar que la integración funciona")
-    public Mono<String> test() {
-        return Mono.just("ePayco integration is working!");
-    }
 
-    // --------------------------- Cargos / checkout link ---------------------------
-
-    @PostMapping("/charge")
-    @Operation(summary = "Crear enlace de pago",
-               description = "Crea un enlace de pago para un curso o servicio (sin enviar datos sensibles)")
-    public Mono<JsonNode> createCharge(@RequestBody JsonNode body) {
-        return epayco.createCharge(body);
-    }
 
     // --------------------------- Pago con tarjeta ---------------------------
 

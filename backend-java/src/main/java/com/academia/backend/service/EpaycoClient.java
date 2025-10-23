@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import org.springframework.http.HttpMethod;
+
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -49,16 +51,6 @@ public class EpaycoClient {
   public Mono<JsonNode> listBanks() {
     return client.get()
         .uri("/banks")
-        .retrieve()
-        .bodyToMono(JsonNode.class);
-  }
-
-  /** Crear enlace/cobro (ajusta body según tu caso) */
-  public Mono<JsonNode> createCharge(JsonNode body) {
-    return client.post()
-        .uri("/payment/link/create")
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(body)
         .retrieve()
         .bodyToMono(JsonNode.class);
   }
@@ -122,10 +114,25 @@ public class EpaycoClient {
         // Aquí devolvemos el JSON crudo para que el controlador/cliente lo muestre.
   }
 
-  /** Estado de un pago */
-  public Mono<JsonNode> getPaymentStatus(String transactionId) {
+  /** Tipos de documento (proxy a GET /type/documents) */
+  public Mono<JsonNode> listDocumentTypes() {
     return client.get()
-        .uri("/payment/status/{transactionId}", transactionId)
+        .uri("/type/documents")
+        .accept(MediaType.APPLICATION_JSON)
+        .retrieve()
+        .bodyToMono(JsonNode.class);
+  }
+
+  public Mono<JsonNode> getTransactionDetail(String referencePayco) {
+    Map<String, Object> payload = Map.of(
+        "filter", Map.of("referencePayco", referencePayco)
+    );
+
+    return client
+        .method(HttpMethod.GET)                // ePayco así lo define: GET con body
+        .uri("/transaction/detail")
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(payload)
         .retrieve()
         .bodyToMono(JsonNode.class);
   }
