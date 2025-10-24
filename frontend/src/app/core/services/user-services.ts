@@ -9,7 +9,7 @@ import { Country, State} from '../../shared/interfaces/location';
 })
 export class UserServices {
   private localData = environment.localData;
-  private apiBase = environment.apiBase;
+  private apiBase = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 

@@ -12,7 +12,7 @@ export interface LeadPayload {
 export class LeadService {
   constructor(private http: HttpClient) {}
   submitLead(payload: LeadPayload) {
-    return this.http.post(`${environment.apiBase}/ingest`, payload);
+    return this.http.post(`${environment.apiUrl}/ingest`, payload);
   }
 }
 

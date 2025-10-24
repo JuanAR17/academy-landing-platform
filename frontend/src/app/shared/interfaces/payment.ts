@@ -78,6 +78,6 @@ export interface Banks{
   name: string,
 }
 
-export interface EpaycoJwtToken{
+export interface EpaycoToken{
   token: string
 }

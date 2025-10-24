@@ -9,4 +9,8 @@ export class PaymentService {
   private localData = environment.localData;
 
   constructor(private http: HttpClient) {}
+
+  getVibecodingTextsArray(){
+    return this.http.get<any>(`${this.localData}/vibecodingTexts.json`)
+  }
 }

@@ -1,0 +1,19 @@
+<section id="view-pse" class="mt-1 border rounded-3 px-4 py-3">
+  <h4 class="mb-3">Pagar con PSE</h4>
+
+  <div class="form-group mb-2">
+      <label class="form-label" for="department">Banco</label>
+      <select 
+          class="form-select" 
+          type="text" 
+          id="department" 
+          name="department"  
+>
+          <option [ngValue]="null">Selecciona tu banco...</option>
+          
+          @for(bank of banksArray(); track bank.id){
+              <option [ngValue]="bank.id">{{bank.name}}</option>
+          }
+      </select>
+  </div>
+</section>

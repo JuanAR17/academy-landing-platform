@@ -6,6 +6,9 @@ import { Contact } from './pages/contact/contact';
 import { About } from './pages/about/about';
 import { Courses } from './pages/courses/courses';
 import { Payment } from './pages/payment/payment';
+import { DebitCreditCard } from './pages/payment/debit-credit-card/debit-credit-card';
+import { Pse } from './pages/payment/pse/pse';
+import { Daviplata } from './pages/payment/daviplata/daviplata';
 
 export const routes: Routes = [
   {
@@ -35,6 +38,20 @@ export const routes: Routes = [
   {
     path: 'payment',
     component: Payment,
+    children:[
+      {
+        path: 'pse',
+        component: Pse 
+      },
+      {
+        path: 'debit-credit-card',
+        component: DebitCreditCard
+      },
+      {
+        path: 'daviplata',
+        component: Daviplata
+      }
+    ],
   },
   {
     path: '',

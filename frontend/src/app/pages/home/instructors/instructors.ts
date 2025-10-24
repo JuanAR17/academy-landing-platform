@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { HomeDataService } from '../../../core/services/homeDataServices';
+import { HomeDataService } from '../../../core/services/home-services';
 import { Instructor } from '../../../shared/interfaces/home';
 
 @Component({

@@ -1,23 +1,22 @@
 export interface Users{
-  id: number,
-  name: string,
+  firstName: string,
   lastname: string,
   email: string,
   username: string,
-  cellphone: number,
-  country: string,
+  phone: number,
   nationality: string,
   documentType: string,
   documentNumber: number,
   address: {
     livingAddress: string,
-    residenceCountry: string,
-    department: string,
+    Country: string,
+    state: string,
     city: string,
   },
-  isAdmin: boolean,
   password: string,
-  whereYouSeeUs: string,
+  howDidYouFindUs: string,
+  isAdmin: boolean,
+  isSuperAdmin: boolean
 }
 
 export interface UsersLogin{

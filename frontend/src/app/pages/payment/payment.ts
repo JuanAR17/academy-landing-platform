@@ -1,23 +1,38 @@
-import { AfterViewInit, Component, computed, ElementRef, inject, OnInit, QueryList, signal, ViewChildren } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { NavBar } from "../../shared/components/nav-bar/nav-bar";
-import { DocumentTypes, Users } from '../../shared/interfaces/users';
-import { UserServices } from '../../core/services/userServices';
+import { DocumentTypes } from '../../shared/interfaces/users';
+import { UserServices } from '../../core/services/user-services';
 import { City, Country, State } from '../../shared/interfaces/location';
-import { FormsModule } from '@angular/forms';
-import { Epayco } from '../../core/services/epaycoService';
-import { Banks } from '../../shared/interfaces/payment';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { EpaycoService } from '../../core/services/epayco-service';
+import { CommonModule } from '@angular/common';
+import { PaymentService } from '../../core/services/payment-services';
+import { filter } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-payment',
-  imports: [NavBar, FormsModule],
+  imports: [
+    CommonModule, 
+    NavBar, 
+    FormsModule, 
+    RouterOutlet, 
+    RouterLink,
+    ReactiveFormsModule  
+  ],
   templateUrl: './payment.html',
   styleUrl: './payment.css'
 })
-export class Payment implements OnInit, AfterViewInit{
-  private userService = inject(UserServices)
-  private epaycoService = inject(Epayco)
-  isDropdownOpen = signal(false);
+export class Payment implements OnInit{
+  private _userService = inject(UserServices)
+  private _epaycoService = inject(EpaycoService)
+  private _paymentService = inject(PaymentService)
+  private _router = inject(Router)
+  private fb = inject(FormBuilder)
+
   documentTypes = signal<DocumentTypes[] | null>([]);
+
   selectedDocumentType = signal<DocumentTypes | null>(null);
   selectedDocumentTypeComputed = computed(() => {
     if (!this.selectedDocumentType()) {return "Seleccionar";} return this.selectedDocumentType()?.type;
@@ -30,51 +45,82 @@ export class Payment implements OnInit, AfterViewInit{
   currentCountry = signal< Country | null >(null);
   currentNationality = computed(() => {
      if (!this.currentCountry()) {return "";} return this.currentCountry()?.nationality;
-  })
+  });
 
   currentResidenceCountry = signal< Country | null >(null);
   currentResidenceCountryId = computed(() => {
     return this.currentResidenceCountry()?.id
-  })
+  });
 
   currentResidenceState = signal< State | null >(null);
   currentResidenceStateId = computed(() => {
     return this.currentResidenceState()?.id
-  })
+  });
 
   currentResidenceCity = signal< City | null >(null);
 
-  @ViewChildren('paymentButton')
-  private paymentButtons!: QueryList<ElementRef<HTMLButtonElement>>;
+  activePaymentId: string | null = null;
 
-  @ViewChildren('paymentView')
-  private paymentViews!: QueryList<ElementRef<HTMLElement>>;
+  textsVibecodingArray = signal<any>([]);
 
-  ngOnInit(){
-    this.getDocumentTypesService();
-    this.getCountrysService();
-    this.tokenLogin();
+  currentRoute: string = '';
+
+  private navigationEvents = toSignal(this._router.events.pipe(filter((event):event is NavigationEnd => event instanceof NavigationEnd)));
+
+  registerForm = this.fb.group({
+    firstName: ['', Validators.required],
+    lastname: ['', Validators.required],
+    email: ['', Validators.required],
+    username: ['', Validators.required],
+    phone: [0, Validators.required],
+    nationality: ['', Validators.required],
+    documentType: ['', Validators.required],
+    documentNumber: [0, Validators.required],
+    address: this.fb.group({
+      livingAddress: ['', Validators.required],
+      Country: ['', Validators.required],
+      state: ['', Validators.required],
+      city: ['', Validators.required],
+    }),
+    password: ['', Validators.required],
+    howDidYouFindUs: ['', Validators.required],
+    isAdmin: [false, Validators.required],
+    isSuperAdmin: [false, Validators.required]
+  })
+
+  constructor(){
+    effect( () => {
+      const event = this.navigationEvents();
+
+      if(event){
+        this.currentRoute = event.urlAfterRedirects;
+        console.log('Nueva ruta detectada con effect():', this.currentRoute);
+      }
+    })
   }
 
-  ngAfterViewInit() {
-    const defaultButton = this.paymentButtons.find(b => b.nativeElement.getAttribute('data-view') === 'view-pse');
+  ngOnInit(){
+    this.currentRoute = this._router.url;
+    this.getDocumentTypesService();
+    this.getCountrysService();
+    this.getArrayTextsVibecoding();
+  }
 
-    if (defaultButton) {
-      defaultButton.nativeElement.classList.add('active-button-style');
-    }
+  getPaymentTemporalToken(){
+    this._epaycoService.getToken().subscribe( ( data ) => {
+      this._epaycoService.saveToken(data.token)
+    })
   }
 
   getDocumentTypesService(){
-    this.userService.getDocumentTypes().subscribe( (data) => {
-      console.log("DocumentTypes: ", data);
+    this._userService.getDocumentTypes().subscribe( (data) => {
       this.documentTypes.set(data)
     })
   }
 
   getCountrysService(){
-    this.userService.getAllCountrys().subscribe( (data) => {
+    this._userService.getAllCountrys().subscribe( (data) => {
       this.countrysArray.set(data)
-      console.log("Countrys", this.countrysArray())
     })
   }
 
@@ -82,9 +128,8 @@ export class Payment implements OnInit, AfterViewInit{
     if(country_id === null){
       console.log("el id es null")
     }else{
-      this.userService.getAllStates(country_id).subscribe( (data) => {
+      this._userService.getAllStates(country_id).subscribe( (data) => {
         this.statesArray.set(data)
-        console.log(data)
     })
     }
   }
@@ -93,67 +138,29 @@ export class Payment implements OnInit, AfterViewInit{
     if(state_id === null){
       console.log("el id es null")
     }else{
-      this.userService.getAllCities(state_id).subscribe( (data) => {
+      this._userService.getAllCities(state_id).subscribe( (data) => {
         this.citiesArray.set(data)
-        console.log(data)
     })
     }
-  }
-
-  toggleDropdown(): void {
-    this.isDropdownOpen.update(current => !current);
   }
 
   selectType(type: DocumentTypes | null): void {
     this.selectedDocumentType.set(type);
-    this.isDropdownOpen.set(false);
   }
 
-  showView(viewId: string, event: Event){
-    event.preventDefault();
-
-    this.paymentViews.forEach(view => {
-        view.nativeElement.classList.remove('active');
-    });
-
-    const targetView = this.paymentViews.find(view => view.nativeElement.id === viewId);
-    if (targetView) {
-        targetView.nativeElement.classList.add('active');
-    }
-
-    this.removeActiveClassFromButtons();
-    (event.currentTarget as HTMLElement).classList.add('active-button-style');
+  selectPayment(id: string): void {
+    this.activePaymentId = id;
   }
 
-
-  removeActiveClassFromButtons(): void {
-    this.paymentButtons.forEach(btn => {
-        btn.nativeElement.classList.remove('active-button-style');
-    });
-  }
-
-  // ------------------------------- epayco -----------------------------------------
-
-  banksArray = signal< Banks[] | null>([]);
-
-  tokenLogin(){
-    this.epaycoService.getTokenLogin().subscribe( (data) => {
-      console.log(data)
+  getArrayTextsVibecoding(){
+    this._paymentService.getVibecodingTextsArray().subscribe( (data) => {
+      this.textsVibecodingArray.set(data)
     })
   }
 
-  getBanks(){
-    this.epaycoService.getAllBanks().subscribe( (data) => {
-      this.banksArray.set(data)
-      console.log("Bancos", data)
-    })
+  onSubmit(){
+    
   }
-
-
-
-
-
-
 
 }
  

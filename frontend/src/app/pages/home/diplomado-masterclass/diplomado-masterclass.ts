@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { TiltCardDirective } from '../../../shared/directives/tilt-card-directive';
 import { CommonModule } from '@angular/common';
 import { Service } from '../../../shared/interfaces/home';
-import { HomeDataService } from '../../../core/services/homeDataServices';
+import { HomeDataService } from '../../../core/services/home-services';
 
 
 @Component({

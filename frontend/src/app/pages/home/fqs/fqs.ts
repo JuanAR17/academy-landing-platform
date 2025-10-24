@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { HomeDataService } from '../../../core/services/homeDataServices';
+import { HomeDataService } from '../../../core/services/home-services';
 import { FQS } from '../../../shared/interfaces/home';
 import { CommonModule } from '@angular/common';
 
