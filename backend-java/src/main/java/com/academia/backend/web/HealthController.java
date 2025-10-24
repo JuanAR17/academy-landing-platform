@@ -2,29 +2,36 @@ package com.academia.backend.web;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.academia.backend.service.IpResolver;
+
+import io.swagger.v3.oas.annotations.Operation;
+
+import com.academia.backend.service.IpResolver;
+
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 @RestController
 public class HealthController {
+
+  private final IpResolver ipResolver;
+
   @GetMapping("/health")
   public Map<String, String> health() {
     return Map.of("status", "ok");
   }
 
+  public HealthController(IpResolver ipResolver) {
+    this.ipResolver = ipResolver;
+  }
+
   @GetMapping("/ip")
-  public Map<String, String> getClientIp(HttpServletRequest request) {
-    String ip = request.getHeader("X-Forwarded-For");
-    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-      ip = request.getHeader("X-Real-IP");
-    }
-    if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-      ip = request.getRemoteAddr();
-    }
-    // Si hay múltiples IPs en X-Forwarded-For, tomar la primera
-    if (ip != null && ip.contains(",")) {
-      ip = ip.split(",")[0].trim();
-    }
+  @Operation(summary = "Obtener IP del cliente",
+             description = "Resuelve la IP a partir de X-Forwarded-For / X-Real-IP / CF-Connecting-IP, con fallback a remoteAddr.")
+  public Map<String, String> ip(HttpServletRequest request) {
+    String ip = ipResolver.resolve(request);
     return Map.of("ip", ip);
   }
+
+
 }

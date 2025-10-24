@@ -3,7 +3,9 @@
     "target": "http://localhost:18081",
     "secure": false,
     "changeOrigin": true,
-    "logLevel": "debug"
-    "pathRewrite": { "^/api": "/api"} 
+    "logLevel": "debug",
+    "xfwd": true,
+    "pathRewrite": { "^/api": "/api" }
   }
 }
+
