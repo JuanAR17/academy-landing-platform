@@ -55,6 +55,16 @@ public class EpaycoClient {
         .bodyToMono(JsonNode.class);
   }
 
+  // 👇 añade este overload
+  public Mono<JsonNode> createCardPayment(JsonNode body) {
+    return client.post()
+        .uri("/payment/process")
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(body)
+        .retrieve()
+        .bodyToMono(JsonNode.class);
+  }
+
   /** Pago con tarjeta (primera vez con datos de tarjeta o siguientes con cardTokenId) */
   public Mono<JsonNode> createCardPayment(CardPaymentIn in) {
     Map<String, Object> body = new LinkedHashMap<>();

@@ -6,19 +6,22 @@ import com.academia.backend.domain.RoleEntity;
 import com.academia.backend.domain.SessionEntity;
 import com.academia.backend.domain.UserEntity;
 import com.academia.backend.dto.AddressDto;
+import com.academia.backend.dto.RegisterIn;
 import com.academia.backend.dto.TokenOut;
 import com.academia.backend.dto.UserDto;
+import com.academia.backend.dto.in.CreateUserIn;
 import com.academia.backend.repo.RoleRepo;
 import com.academia.backend.repo.SessionRepo;
 import com.academia.backend.repo.UserRepo;
-import java.net.InetAddress;
-import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -63,6 +66,8 @@ public class AuthService {
     this.jwt = jwt;
   }
 
+  // ===== Utilidad de contraseñas / tokens / cookies =====
+
   public String hashPassword(String raw) {
     return argon.encode(raw);
   }
@@ -87,8 +92,8 @@ public class AuthService {
     }
   }
 
-  public Cookie buildHttpOnlyCookie(String name, String value, long maxAgeSeconds) {
-    Cookie c = new Cookie(name, value);
+  public jakarta.servlet.http.Cookie buildHttpOnlyCookie(String name, String value, long maxAgeSeconds) {
+    jakarta.servlet.http.Cookie c = new jakarta.servlet.http.Cookie(name, value);
     c.setHttpOnly(true);
     c.setSecure(cookieSecure);
     c.setPath(cookiePath);
@@ -114,21 +119,27 @@ public class AuthService {
     return sessions.save(s);
   }
 
+  // ===== Validación de fuerza de contraseña (helper) =====
+  public void assertPasswordStrength(String raw) {
+    if (raw == null || raw.length() < 8 || raw.length() > 72)
+      throw new IllegalArgumentException("La contraseña debe tener entre 8 y 72 caracteres");
+    if (!raw.matches("^(?=.*[A-Za-z])(?=.*\\d).{8,72}$"))
+      throw new IllegalArgumentException("La contraseña debe contener letras y números");
+  }
+
+  // ===== Flujos existentes (cambio de contraseña / actualización / consultas) =====
+
   public void changePassword(UUID userId, String currentPassword, String newPassword) {
     UserEntity user = users.findById(userId)
         .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND));
 
-    // Verifica que la contraseña actual sea correcta
     if (!verifyPassword(user.getPasswordHash(), currentPassword)) {
       throw new IllegalArgumentException(INCORRECT_PASSWORD);
     }
-
-    // Verifica que la nueva contraseña sea diferente a la actual
     if (verifyPassword(user.getPasswordHash(), newPassword)) {
       throw new IllegalArgumentException(SAME_PASSWORD);
     }
 
-    // Actualiza la contraseña
     user.setPasswordHash(hashPassword(newPassword));
     users.save(user);
   }
@@ -242,12 +253,10 @@ public class AuthService {
   }
 
   public UserDto getUserByIdentifier(String identifier) {
-    // Primero intenta parsear como UUID (ID)
     try {
       UUID id = UUID.fromString(identifier);
       return getUserInfo(id);
     } catch (IllegalArgumentException e) {
-      // No es UUID, busca por email o username
       UserEntity user = users.findByEmailOrUsername(identifier)
           .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND));
       return getUserInfo(user.getId());
@@ -279,5 +288,120 @@ public class AuthService {
           return dto;
         })
         .toList();
+  }
+
+  // ====== NUEVO: Registro y creación de usuario transaccional ======
+
+  /**
+   * Registro normal / o marcado como admin (según isAdmin).
+   * Genera usuario, sesión y access token dentro de UNA transacción.
+   * Si algo falla, se hace rollback automáticamente.
+   *
+   * @param in            payload de registro
+   * @param isAdmin       si true asigna "ADMIN", si false "STUDENT"
+   * @param ua            user-agent
+   * @param request       para obtener IP cliente
+   * @param refreshPlain  valor en claro del refresh token (se guarda HMAC)
+   */
+  @Transactional(rollbackFor = Exception.class)
+  public TokenOut register(RegisterIn in, boolean isAdmin, String ua, HttpServletRequest request, String refreshPlain) {
+    // Validaciones de unicidad
+    if (users.findByEmail(in.getCorreo()).isPresent()) {
+      throw new IllegalArgumentException(EMAIL_IN_USE);
+    }
+    if (users.findByUsername(in.getUsername()).isPresent()) {
+      throw new IllegalArgumentException(USERNAME_IN_USE);
+    }
+
+    // (opcional) fuerza contraseña
+    // assertPasswordStrength(in.getPassword());
+
+    // 1) Crear usuario
+    UserEntity user = new UserEntity();
+    user.setEmail(in.getCorreo());
+    user.setUsername(in.getUsername());
+    user.setPasswordHash(hashPassword(in.getPassword()));
+    user.setFirstName(in.getFirstName());
+    user.setLastName(in.getLastName());
+    user.setPhone(in.getPhone());
+    user.setNationality(in.getNationality());
+    if (in.getAddress() != null) {
+      Address address = new Address();
+      address.setAddress(in.getAddress().getAddress());
+      address.setCity(in.getAddress().getCity());
+      address.setState(in.getAddress().getState());
+      address.setCountry(in.getAddress().getCountry());
+      user.setAddress(address);
+    }
+    user.setHowDidYouFindUs(in.getHowDidYouFindUs());
+
+    String roleName = isAdmin ? "ADMIN" : "STUDENT";
+    RoleEntity roleEntity = roles.findByName(roleName)
+        .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+    user.setRoleEntity(roleEntity);
+    user = users.save(user);
+
+    // 2) Crear sesión
+    byte[] rth = hmacRefresh(refreshPlain);
+    InetAddress clientIp = getClientIp(request);
+    SessionEntity row = newSession(user.getId(), rth, ua, clientIp);
+
+    // 3) CSRF + Access
+    String csrf = genRandomUrlToken();
+    return mint(user, row, csrf); // access + csrf + userId
+  }
+
+  /**
+   * Creación de usuario con rol arbitrado, usada por /create-user (admin).
+   */
+  @Transactional(rollbackFor = Exception.class)
+  public TokenOut createUserWithRole(CreateUserIn input, String ua, HttpServletRequest request, String refreshPlain) {
+    if (users.findByEmail(input.email()).isPresent()) {
+      throw new IllegalArgumentException(EMAIL_IN_USE);
+    }
+    if (users.findByUsername(input.username()).isPresent()) {
+      throw new IllegalArgumentException(USERNAME_IN_USE);
+    }
+
+    UserEntity user = new UserEntity();
+    user.setEmail(input.email());
+    user.setUsername(input.username());
+    user.setPasswordHash(hashPassword(input.password()));
+    user.setFirstName(input.firstName());
+    user.setLastName(input.lastName());
+    user.setPhone(input.phone());
+    user.setNationality("");
+
+    RoleEntity roleEntity = roles.findByName(input.role().name())
+        .orElseThrow(() -> new RuntimeException("Role not found: " + input.role().name()));
+    user.setRoleEntity(roleEntity);
+    user = users.save(user);
+
+    byte[] rth = hmacRefresh(refreshPlain);
+    InetAddress clientIp = getClientIp(request);
+    SessionEntity row = newSession(user.getId(), rth, ua, clientIp);
+
+    String csrf = genRandomUrlToken();
+    return mint(user, row, csrf);
+  }
+
+  // ===== helper interno para IP (idéntico al que tienes en el controller) =====
+  private InetAddress getClientIp(HttpServletRequest request) {
+    try {
+      String ip = request.getHeader("X-Forwarded-For");
+      if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+        ip = request.getHeader("X-Real-IP");
+      }
+      if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+        ip = request.getRemoteAddr();
+      }
+      return InetAddress.getByName(ip);
+    } catch (Exception e) {
+      try {
+        return InetAddress.getLocalHost();
+      } catch (Exception ex) {
+        return null;
+      }
+    }
   }
 }

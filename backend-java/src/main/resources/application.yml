@@ -35,14 +35,14 @@ spring:
 
 jwt:
   alg: ${JWT_ALG:HS256}
-  secret: ${JWT_SECRET:super-secret-jwt-key-minimum-256-bits-required-change-in-production}
-  privateKey: ${JWT_PRIVATE_KEY:}
-  publicKey: ${JWT_PUBLIC_KEY:}
+  secret: ${JWT_SECRET:}              # ← SIN fallback corto ni typos (NO `${JWT SECRET}`)
   accessTtlMinutes: ${ACCESS_TTL_MINUTES:15}
   sessionTtlDays: ${SESSION_TTL_DAYS:60}
 
 refresh:
-  hmacSecret: ${REFRESH_HMAC_SECRET:super-secret-refresh-hmac-key-minimum-256-bits-change-in-production}
+  hmacSecret: ${REFRESH_HMAC_SECRET:}
+
+
 
 cookies:
   secure: ${COOKIE_SECURE:false}

@@ -1,6 +1,5 @@
 package com.academia.backend.web;
 
-import com.academia.backend.domain.Address;
 import com.academia.backend.domain.Role;
 import com.academia.backend.domain.SessionEntity;
 import com.academia.backend.domain.UserEntity;
@@ -20,7 +19,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import java.net.InetAddress;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -30,6 +28,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.net.InetAddress;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,11 +63,12 @@ public class AuthController {
     this.jwt = jwt;
   }
 
+  // ================== LOGIN ==================
   @PostMapping("/login")
   @Operation(summary = "Login: crea sesión y entrega access JWT + cookies (rt, csrf)")
   public ResponseEntity<TokenOut> login(@Valid @RequestBody LoginIn in,
-      @RequestHeader(value = "User-Agent", required = false) String ua,
-      HttpServletRequest request) {
+                                        @RequestHeader(value = "User-Agent", required = false) String ua,
+                                        HttpServletRequest request) {
     UserEntity user = users.findByEmailOrUsername(in.identifier)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
     if (!auth.verifyPassword(user.getPasswordHash(), in.password))
@@ -90,132 +90,57 @@ public class AuthController {
     return ResponseEntity.ok().headers(headers).body(out);
   }
 
+  // ================== REGISTRO (transaccional en el service) ==================
   @PostMapping("/register")
   @Operation(summary = "Registro de nuevo usuario")
   public ResponseEntity<TokenOut> register(@Valid @RequestBody RegisterIn in,
-      @RequestHeader(value = "User-Agent", required = false) String ua, HttpServletRequest request) {
-    // Valida que el email no exista
-    if (users.findByEmail(in.getCorreo()).isPresent()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El email ya está registrado");
-    }
+                                           @RequestHeader(value = "User-Agent", required = false) String ua,
+                                           HttpServletRequest request) {
+    // Generamos refresh en claro aquí solo para setear cookie; el HMAC y la sesión
+    // se crean dentro del Service (transacción).
+    String refreshPlain = auth.genRandomUrlToken();
 
-    // Valida que el username no exista
-    if (users.findByUsername(in.getUsername()).isPresent()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de usuario ya está en uso");
-    }
+    // Nota: se pasa "true" para mantener tu lógica previa (role ADMIN en /register).
+    // Si quieres que los registros sean STUDENT, cambia a "false".
+    TokenOut out = auth.register(in, true, ua, request, refreshPlain);
 
-    return createUserAndSession(in, true, ua, request);
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(HttpHeaders.SET_COOKIE, buildCookie(RT_COOKIE, refreshPlain, true, 60L * 60 * 24 * 60));
+    headers.add(HttpHeaders.SET_COOKIE, buildCookie(CSRF_COOKIE, out.getCsrfToken(), false, 60L * 60 * 24 * 60));
+    return ResponseEntity.status(HttpStatus.CREATED).headers(headers).body(out);
   }
 
+  // ================== CREAR USUARIO (admin) (transaccional en el service) ==================
   @PostMapping("/create-user")
   @SecurityRequirement(name = "bearerAuth")
   @Operation(summary = "Crear usuario (solo administradores)")
   public ResponseEntity<TokenOut> createUser(@Valid @RequestBody CreateUserIn input,
-      @RequestHeader("Authorization") String authHeader,
-      @RequestHeader(value = "User-Agent", required = false) String ua, HttpServletRequest request) {
-
+                                             @RequestHeader("Authorization") String authHeader,
+                                             @RequestHeader(value = "User-Agent", required = false) String ua,
+                                             HttpServletRequest request) {
     UUID creatorId = jwt.extractUserIdFromHeader(authHeader);
     UserDto creator = auth.getUserInfo(creatorId);
 
-    // Verificar que el creador sea admin
     if (!Boolean.TRUE.equals(creator.getIsAdmin())) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo administradores pueden crear usuarios");
     }
 
-    // Validar restricciones de roles
     if (creator.getRole() == Role.ADMIN && (input.role() == Role.ADMIN || input.role() == Role.SUPER_ADMIN)) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN,
           "Los administradores normales no pueden crear administradores");
     }
 
-    // Verificar que el email no exista
-    if (users.findByEmail(input.email()).isPresent()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El email ya está registrado");
-    }
-
-    // Verificar que el username no exista
-    if (users.findByUsername(input.username()).isPresent()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de usuario ya está en uso");
-    }
-
-    return createUserWithRole(input, ua, request);
-  }
-
-  private ResponseEntity<TokenOut> createUserWithRole(CreateUserIn input,
-      @RequestHeader(value = "User-Agent", required = false) String ua, HttpServletRequest request) {
-    UserEntity user = new UserEntity();
-    user.setEmail(input.email());
-    user.setUsername(input.username());
-    user.setPasswordHash(auth.hashPassword(input.password()));
-    user.setFirstName(input.firstName());
-    user.setLastName(input.lastName());
-    user.setPhone(input.phone());
-    user.setNationality(""); // No incluido en CreateUserIn, dejar vacío por ahora
-
-    // Assign role based on input
-    var roleEntity = roles.findByName(input.role().name())
-        .orElseThrow(() -> new RuntimeException("Role not found: " + input.role().name()));
-    user.setRoleEntity(roleEntity);
-    user = users.save(user);
-
-    // Crea una sesión automáticamente
     String refreshPlain = auth.genRandomUrlToken();
-    byte[] rth = auth.hmacRefresh(refreshPlain);
-    InetAddress clientIp = getClientIp(request);
-    SessionEntity row = auth.newSession(user.getId(), rth, ua, clientIp);
-
-    String csrf = auth.genRandomUrlToken();
-    String access = jwt.mintAccess(user.getId().toString(), row.getId().toString());
-    TokenOut out = new TokenOut(access, csrf, user.getId());
+    TokenOut out = auth.createUserWithRole(input, ua, request, refreshPlain);
 
     HttpHeaders headers = new HttpHeaders();
     headers.add(HttpHeaders.SET_COOKIE, buildCookie(RT_COOKIE, refreshPlain, true, 60L * 60 * 24 * 60));
-    headers.add(HttpHeaders.SET_COOKIE, buildCookie(CSRF_COOKIE, csrf, false, 60L * 60 * 24 * 60));
+    headers.add(HttpHeaders.SET_COOKIE, buildCookie(CSRF_COOKIE, out.getCsrfToken(), false, 60L * 60 * 24 * 60));
+
     return ResponseEntity.status(HttpStatus.CREATED).headers(headers).body(out);
   }
 
-  private ResponseEntity<TokenOut> createUserAndSession(RegisterIn in, boolean isAdmin,
-      @RequestHeader(value = "User-Agent", required = false) String ua, HttpServletRequest request) {
-    UserEntity user = new UserEntity();
-    user.setEmail(in.getCorreo());
-    user.setUsername(in.getUsername());
-    user.setPasswordHash(auth.hashPassword(in.contrasena));
-    user.setFirstName(in.getFirstName());
-    user.setLastName(in.getLastName());
-    user.setPhone(in.getPhone());
-    user.setNationality(in.getNationality());
-    if (in.getAddress() != null) {
-      Address address = new Address();
-      address.setAddress(in.getAddress().getAddress());
-      address.setCity(in.getAddress().getCity());
-      address.setState(in.getAddress().getState());
-      address.setCountry(in.getAddress().getCountry());
-      user.setAddress(address);
-    }
-    user.setHowDidYouFindUs(in.getHowDidYouFindUs());
-    // Assign role based on isAdmin parameter
-    String roleName = isAdmin ? "ADMIN" : "STUDENT";
-    var roleEntity = roles.findByName(roleName)
-        .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
-    user.setRoleEntity(roleEntity);
-    user = users.save(user);
-
-    // Crea una sesión automáticamente
-    String refreshPlain = auth.genRandomUrlToken();
-    byte[] rth = auth.hmacRefresh(refreshPlain);
-    InetAddress clientIp = getClientIp(request);
-    SessionEntity row = auth.newSession(user.getId(), rth, ua, clientIp);
-
-    String csrf = auth.genRandomUrlToken();
-    String access = jwt.mintAccess(user.getId().toString(), row.getId().toString());
-    TokenOut out = new TokenOut(access, csrf, user.getId());
-
-    HttpHeaders headers = new HttpHeaders();
-    headers.add(HttpHeaders.SET_COOKIE, buildCookie(RT_COOKIE, refreshPlain, true, 60L * 60 * 24 * 60));
-    headers.add(HttpHeaders.SET_COOKIE, buildCookie(CSRF_COOKIE, csrf, false, 60L * 60 * 24 * 60));
-    return ResponseEntity.status(HttpStatus.CREATED).headers(headers).body(out);
-  }
-
+  // ================== REFRESH ==================
   @PostMapping("/refresh")
   @Operation(summary = "Rota refresh y entrega nuevo access")
   public ResponseEntity<TokenOut> refresh(HttpServletRequest req) {
@@ -248,6 +173,7 @@ public class AuthController {
     return ResponseEntity.ok().headers(headers).body(out);
   }
 
+  // ================== LOGOUT ==================
   @PostMapping("/logout")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(summary = "Revoca sesión y borra cookies")
@@ -264,15 +190,16 @@ public class AuthController {
     res.addHeader(HttpHeaders.SET_COOKIE, buildCookie(CSRF_COOKIE, "", false, 0));
   }
 
+  // ================== CHECK ==================
   @GetMapping("/check")
   public java.util.Map<String, String> check() {
     return java.util.Map.of("status", "success");
   }
 
+  // ================== CHANGE PASSWORD ==================
   @PostMapping("/change-password")
   @Operation(summary = "Cambiar contraseña del usuario autenticado")
   public ResponseEntity<java.util.Map<String, String>> changePassword(@Valid @RequestBody ChangePasswordIn in) {
-    // Obtiene el userId del contexto de seguridad (JWT)
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null || !authentication.isAuthenticated()) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
@@ -294,10 +221,10 @@ public class AuthController {
     }
   }
 
+  // ================== UPDATE USER ==================
   @PutMapping("/update")
   @Operation(summary = "Actualizar datos del usuario autenticado")
   public ResponseEntity<java.util.Map<String, String>> updateUser(@Valid @RequestBody UserDto in) {
-    // Obtiene el userId del contexto de seguridad (JWT)
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null || !authentication.isAuthenticated()) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
@@ -319,6 +246,7 @@ public class AuthController {
     }
   }
 
+  // ================== GET USER INFO ==================
   @GetMapping("/user")
   @Operation(summary = "Obtener información de usuario: propio si no es admin, o por ID/email/username si es admin")
   public ResponseEntity<Object> getUserInfo(@RequestParam(required = false) String identifier) {
@@ -383,32 +311,6 @@ public class AuthController {
     return response;
   }
 
-  @GetMapping("/users")
-  @Operation(summary = "Obtener lista de todos los usuarios (solo admins)")
-  public ResponseEntity<java.util.List<UserDto>> getAllUsers() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication == null || !authentication.isAuthenticated()) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
-    }
-
-    String userIdStr = authentication.getName();
-    UUID userId;
-    try {
-      userId = UUID.fromString(userIdStr);
-    } catch (IllegalArgumentException e) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido");
-    }
-
-    // Verificar si es admin
-    UserDto currentUser = auth.getUserInfo(userId);
-    if (!Boolean.TRUE.equals(currentUser.getIsAdmin())) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo administradores pueden ver la lista de usuarios");
-    }
-
-    java.util.List<UserDto> userList = auth.getAllUsers();
-    return ResponseEntity.ok(userList);
-  }
-
   // ---- helpers cookies ----
   private String buildCookie(String name, String value, boolean httpOnly, long maxAgeSeconds) {
     StringBuilder sb = new StringBuilder();
@@ -435,7 +337,7 @@ public class AuthController {
     return null;
   }
 
-  // Helper method to get client IP
+  // Helper method to get client IP (usado en /login)
   private InetAddress getClientIp(HttpServletRequest request) {
     try {
       String ip = request.getHeader("X-Forwarded-For");
@@ -448,7 +350,7 @@ public class AuthController {
       return InetAddress.getByName(ip);
     } catch (Exception e) {
       try {
-        return InetAddress.getLocalHost();
+        return java.net.InetAddress.getLocalHost();
       } catch (Exception ex) {
         return null;
       }
