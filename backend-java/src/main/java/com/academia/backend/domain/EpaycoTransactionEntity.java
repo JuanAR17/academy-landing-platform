@@ -4,10 +4,20 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 @Entity
 @Table(name = "epayco_transactions")
 public class EpaycoTransactionEntity {
+
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -61,11 +71,13 @@ public class EpaycoTransactionEntity {
   @Column(name = "country_iso2")
   private String countryIso2;
 
-  @Column(columnDefinition = "jsonb")
-  private String extras;
+ @Column(name = "extras", columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
+  private JsonNode extras;
 
   @Column(name = "raw_payload", columnDefinition = "jsonb")
-  private String rawPayload;
+  @JdbcTypeCode(SqlTypes.JSON)
+  private JsonNode rawPayload;
 
   @Column(name = "created_at", nullable = false)
   private Instant createdAt = Instant.now();
@@ -126,10 +138,26 @@ public class EpaycoTransactionEntity {
   public void setAddress(String address) { this.address = address; }
   public String getCountryIso2() { return countryIso2; }
   public void setCountryIso2(String countryIso2) { this.countryIso2 = countryIso2; }
-  public String getExtras() { return extras; }
-  public void setExtras(String extras) { this.extras = extras; }
-  public String getRawPayload() { return rawPayload; }
-  public void setRawPayload(String rawPayload) { this.rawPayload = rawPayload; }
+  public JsonNode getExtras() { return extras; }
+  public void setExtras(JsonNode extras) { this.extras = extras; }
+
+  // opcionales pero útiles
+  public void setExtras(Map<String, ?> extras) { this.extras = MAPPER.valueToTree(extras); }
+  public void setExtras(String extrasJson) {
+    try { this.extras = MAPPER.readTree(extrasJson); }
+    catch (Exception e) { throw new IllegalArgumentException("extras no es JSON válido", e); }
+  }
+
+  public JsonNode getRawPayload() { return rawPayload; }
+  public void setRawPayload(JsonNode rawPayload) { this.rawPayload = rawPayload; }
+
+  // opcionales
+  public void setRawPayload(Object anyPojo) { this.rawPayload = MAPPER.valueToTree(anyPojo); }
+  public void setRawPayload(String rawJson) {
+    try { this.rawPayload = MAPPER.readTree(rawJson); }
+    catch (Exception e) { throw new IllegalArgumentException("raw_payload no es JSON válido", e); }
+  }
+
   public Instant getCreatedAt() { return createdAt; }
   public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }
