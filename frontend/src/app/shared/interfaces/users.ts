@@ -26,6 +26,7 @@ export interface UsersLogin{
 
 export interface DocumentTypes{
   id: number,
-  type: string,
-  value: string,
+  name: string,
+  cod: string,
+  description: string,
 }

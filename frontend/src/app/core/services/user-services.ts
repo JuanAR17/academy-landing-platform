@@ -13,10 +13,6 @@ export class UserServices {
 
   constructor(private http: HttpClient) {}
 
-  getDocumentTypes() {
-    return this.http.get<[DocumentTypes]>(`${this.localData}/documentTypes.json`);
-  }
-
   getAllCountrys(){
     return this.http.get<[Country]>(`${this.apiBase}/locations/countries`);
   }

@@ -35,10 +35,11 @@ export class Payment implements OnInit{
 
   selectedDocumentType = signal<DocumentTypes | null>(null);
   selectedDocumentTypeComputed = computed(() => {
-    if (!this.selectedDocumentType()) {return "Seleccionar";} return this.selectedDocumentType()?.type;
+    if (!this.selectedDocumentType()) {return "Seleccionar";} return this.selectedDocumentType()?.name;
   });
 
   countrysArray = signal< Country[] | null>([]);
+
   statesArray = signal< State[] | null>([]);
   citiesArray = signal< State[] | null>([]);
 
@@ -68,22 +69,25 @@ export class Payment implements OnInit{
   private navigationEvents = toSignal(this._router.events.pipe(filter((event):event is NavigationEnd => event instanceof NavigationEnd)));
 
   registerForm = this.fb.group({
-    firstName: ['', Validators.required],
-    lastname: ['', Validators.required],
-    email: ['', Validators.required],
-    username: ['', Validators.required],
-    phone: [0, Validators.required],
-    nationality: ['', Validators.required],
-    documentType: ['', Validators.required],
-    documentNumber: [0, Validators.required],
-    address: this.fb.group({
-      livingAddress: ['', Validators.required],
-      Country: ['', Validators.required],
-      state: ['', Validators.required],
-      city: ['', Validators.required],
+    firstName: [null, Validators.required],
+    lastName: [null, Validators.required],
+    email: [null, Validators.required],
+    username: [null, Validators.required],
+    phone: this.fb.group({
+      extension : ['+57', Validators.required],
+      phoneNumber: [null, Validators.required]
     }),
-    password: ['', Validators.required],
-    howDidYouFindUs: ['', Validators.required],
+    nationality: [null, Validators.required],
+    documentType: [null, Validators.required],
+    documentNumber: [null, Validators.required],
+    address: this.fb.group({
+      street: [null, Validators.required],
+      Country: [null, Validators.required],
+      state: [null, Validators.required],
+      city: [null, Validators.required],
+    }),
+    password: [null, Validators.required],
+    howDidYouFindUs: [null, Validators.required],
     isAdmin: [false, Validators.required],
     isSuperAdmin: [false, Validators.required]
   })
@@ -106,15 +110,9 @@ export class Payment implements OnInit{
     this.getArrayTextsVibecoding();
   }
 
-  getPaymentTemporalToken(){
-    this._epaycoService.getToken().subscribe( ( data ) => {
-      this._epaycoService.saveToken(data.token)
-    })
-  }
-
   getDocumentTypesService(){
-    this._userService.getDocumentTypes().subscribe( (data) => {
-      this.documentTypes.set(data)
+    this._epaycoService.getDocumentTypes().subscribe( (data) => {
+      this.documentTypes.set(data.data)
     })
   }
 
