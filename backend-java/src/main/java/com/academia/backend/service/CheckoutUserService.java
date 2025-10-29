@@ -1,9 +1,19 @@
 package com.academia.backend.service;
 
 import com.academia.backend.domain.UserEntity;
+import com.academia.backend.domain.EpaycoTransactionEntity;
 import com.academia.backend.domain.RoleEntity;
+import com.academia.backend.dto.PsePaymentOut;
 import com.academia.backend.dto.in.CardPaymentIn;
+import com.academia.backend.dto.in.PsePaymentIn;
 import com.academia.backend.repo.UserRepo;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.servlet.http.HttpServletRequest;
+import reactor.core.publisher.Mono;
+
+import com.academia.backend.repo.EpaycoTransactionRepo;
 import com.academia.backend.repo.RoleRepo;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -15,10 +25,17 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.UUID;
+
+
+
 
 @Service
 public class CheckoutUserService {
@@ -27,10 +44,20 @@ public class CheckoutUserService {
     private final RoleRepo roleRepo;
     private final PasswordEncoder passwordEncoder;
 
-    public CheckoutUserService(UserRepo userRepo, RoleRepo roleRepo, PasswordEncoder passwordEncoder) {
+    private final EpaycoClient epaycoClient;
+    private final IpResolver ipResolver;        // ya lo tienes en /service
+    private final ObjectMapper om;
+    private final EpaycoTransactionRepo trxRepo; // si lo tienes
+
+
+    public CheckoutUserService(UserRepo userRepo, RoleRepo roleRepo, PasswordEncoder passwordEncoder, IpResolver ipResolver) {
         this.userRepo = userRepo;
         this.roleRepo = roleRepo;
         this.passwordEncoder = passwordEncoder;
+        this.epaycoClient = null;
+        this.ipResolver = ipResolver;
+        this.om = new ObjectMapper();
+        this.trxRepo = null;
     }
 
     /** Devuelve un userId válido: reutiliza por email o crea uno nuevo. */
@@ -206,5 +233,63 @@ public class CheckoutUserService {
         } catch (Exception ignored) {
             return false;
         }
+    }
+
+    public Mono<PsePaymentOut> payWithPse(PsePaymentIn in, HttpServletRequest req) {
+        String clientIp = ipResolver.resolve(req);
+
+        return epaycoClient.createPsePayment(in, clientIp)
+            .map(resp -> buildPseOutAndPersist(resp, in, clientIp));
+    }
+
+    private PsePaymentOut buildPseOutAndPersist(JsonNode resp, PsePaymentIn in, String clientIp) {
+        // ePayco suele devolver bajo data.transaction.data; urlbanco a veces vive en data.urlbanco
+        JsonNode data = resp.path("data");
+        JsonNode tx   = data.path("transaction").path("data");
+
+        PsePaymentOut out = new PsePaymentOut();
+        // url de banco (usa fallback si viene en otra rama)
+        String urlBanco = data.path("urlbanco").asText(null);
+        if (urlBanco == null || urlBanco.isBlank()) {
+        urlBanco = tx.path("urlbanco").asText(null);
+        }
+        out.redirectUrl = urlBanco;
+
+        out.refPayco = tx.path("ref_payco").isMissingNode() ? null : tx.path("ref_payco").asLong();
+        out.invoice  = tx.path("factura").asText(in.getInvoice());
+        out.status   = tx.path("estado").asText("Pendiente");
+        out.response = tx.path("respuesta").asText(null);
+        out.receipt  = tx.path("recibo").asText(null);
+        out.authorizationOrTxnId = tx.path("transactionID").asText(null);
+        out.ticketId  = tx.path("ticketId").asText(null);
+        out.txnDate   = parseEpaycoDate(tx.path("fecha").asText(null));
+        // si tienes lookup token, asígnalo aquí: out.lookupToken = ...
+
+        // —— Persistencia opcional (no romper si falla) ——
+        try {
+        var e = new EpaycoTransactionEntity();
+        e.setRefPayco(out.refPayco);
+        e.setInvoice(out.invoice);
+        e.setDescription(in.getDescription());
+        e.setAmount(in.getValue());
+        e.setCurrency(in.getCurrency());
+        e.setStatus(out.status);
+        e.setResponse(out.response);
+        e.setReceipt(out.receipt);
+        e.setBank(in.getBank());
+        e.setIp(clientIp);
+        e.setTxnDate(out.txnDate);
+        e.setRawPayload(resp.toString()); // o JsonNode->String
+        // completa más campos si quieres (docType, docNumber, email, etc.)
+        if (trxRepo != null) trxRepo.save(e);
+        } catch (Exception ignore) {}
+
+        return out;
+    }
+
+    private static Instant parseEpaycoDate(String v) {
+        if (v == null || v.isBlank()) return null;
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return LocalDateTime.parse(v, fmt).atZone(ZoneId.systemDefault()).toInstant();
     }
 }

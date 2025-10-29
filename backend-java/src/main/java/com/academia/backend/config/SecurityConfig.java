@@ -21,34 +21,41 @@ public class SecurityConfig {
     http.csrf(csrf -> csrf.disable());
     http.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-    // SecurityConfig.java
     http.authorizeHttpRequests(auth -> auth
-        // públicos
+        // --- públicos que ya tenías ---
         .requestMatchers(
             "/api/auth/**", "/health", "/ip", "/ingest",
             "/api/locations/**", "/api/courses/**",
             "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
         ).permitAll()
-        // catálogos ePayco públicos (GET)
+
+        // --- catálogos ePayco (GET) ---
         .requestMatchers(HttpMethod.GET,
             "/api/epayco/banks",
             "/api/epayco/document-types",
             "/api/epayco/payment-methods",
-            "/api/epayco/payment/*/status"
+            "/api/epayco/payment/*/status",
+            // si publicas consulta por token corto, déjalo habilitado:
+            "/api/epayco/tx/**"
         ).permitAll()
-        // pago con tarjeta: invitado **o** logueado
-        .requestMatchers(HttpMethod.POST, "/api/epayco/payment").permitAll()
-        // resto autenticado
+
+        // --- pagos accesibles a invitados o logueados ---
+        .requestMatchers(HttpMethod.POST,
+            "/api/epayco/payment",   // tarjeta (ya lo tenías)
+            "/api/epayco/pse",       // << NUEVO: PSE abierto (JWT opcional)
+            "/webhook/epayco"        // << NUEVO: webhook server-to-server desde ePayco
+        ).permitAll()
+
+        // el resto requiere JWT
         .anyRequest().authenticated()
     );
 
-
-    // Si falta o es inválido el JWT, responder 401
+    // 401 cuando falta/invalid JWT
     http.exceptionHandling(e ->
         e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
     );
 
-    // Filtro JWT antes del UsernamePasswordAuthenticationFilter
+    // Filtro JWT
     http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

@@ -1,3 +1,4 @@
+// backend-java/src/main/java/com/academia/backend/service/IpResolver.java
 package com.academia.backend.service;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,12 +15,22 @@ public class IpResolver {
       "CF-Connecting-IP",   // Cloudflare
       "X-Real-IP",
       "X-Forwarded-For",
+      "True-Client-IP",
       "X-Client-IP",
       "Forwarded",
       "X-Forwarded",
       "X-Cluster-Client-Ip"
   );
 
+  /** Método que espera CheckoutUserService */
+  public String getClientIp(HttpServletRequest req) {
+    String ip = resolve(req);
+    // normaliza loopback en local
+    if ("::1".equals(ip) || "0:0:0:0:0:0:0:1".equals(ip)) return "127.0.0.1";
+    return ip;
+  }
+
+  /** Lógica de resolución detrás de proxy/CDN */
   public String resolve(HttpServletRequest req) {
     for (String h : CANDIDATE_HEADERS) {
       String v = req.getHeader(h);
@@ -27,8 +38,7 @@ public class IpResolver {
 
       // X-Forwarded-For: "client, proxy1, proxy2"
       if (h.equalsIgnoreCase("X-Forwarded-For")) {
-        String ip = v.split(",")[0].trim();
-        ip = sanitize(ip);
+        String ip = sanitize(v.split(",")[0].trim());
         if (!ip.isBlank()) return ip;
       }
 
@@ -53,11 +63,10 @@ public class IpResolver {
 
   private String sanitize(String ip) {
     if (ip == null) return "";
-    // Quitar formato IPv6 con puerto [::1]:1234, zona, etc.
     ip = ip.trim();
     ip = ip.replaceAll("^\\[(.*)\\]$", "$1");  // [ipv6] -> ipv6
     ip = ip.replaceAll("%.*$", "");            // zona
-    ip = ip.replaceAll(":\\d+$", "");          // puerto al final
+    ip = ip.replaceAll(":\\d+$", "");          // puerto
     if (ip.startsWith("::ffff:")) ip = ip.substring(7); // IPv4-mapped
     return ip;
   }

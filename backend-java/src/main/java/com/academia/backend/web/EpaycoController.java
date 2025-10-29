@@ -1,6 +1,8 @@
 package com.academia.backend.web;
 
+import com.academia.backend.dto.PsePaymentOut;
 import com.academia.backend.dto.in.CardPaymentIn;
+import com.academia.backend.dto.in.PsePaymentIn;
 import com.academia.backend.service.EpaycoAuthService;
 import com.academia.backend.service.EpaycoClient;
 import com.academia.backend.domain.EpaycoCardEntity;
@@ -20,9 +22,11 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
@@ -268,7 +272,8 @@ public class EpaycoController {
                         card.setCardTokenId(cardTokenId);
 
                         // metadatos si vino tarjeta cruda
-                        if (hasRawCard) {
+                        boolean hasRaw = hasRawCard;
+                        if (hasRaw) {
                             String num = body.getCardNumber();
                             if (num != null && num.length() >= 4) {
                                 card.setLast4(num.substring(num.length() - 4));
@@ -333,5 +338,24 @@ public class EpaycoController {
 
                 return resp; // devolver SIEMPRE la respuesta de ePayco
             });
+    }
+
+    // ---------- Pago PSE ----------
+    @PostMapping("/payment/pse")
+    @Operation(
+      summary = "Inicia pago PSE (/payment/process/pse)",
+      description = "Crea la transacción PSE en ePayco (obligatorios: bank, value, docType, docNumber, name, email, cellPhone, address, ip(back), urlResponse). " +
+                    "Devuelve url de redirección al banco y metadatos (invoice, refPayco)."
+    )
+    @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Transacción creada")
+    })
+    public Mono<ResponseEntity<PsePaymentOut>> payPse(
+        @Valid @RequestBody PsePaymentIn in,
+        HttpServletRequest req
+    ) {
+      return checkoutUserService
+          .payWithPse(in, req)   // tu servicio se encarga de: resolver IP, llamar client, persistir y armar PsePaymentOut
+          .map(ResponseEntity::ok);
     }
 }
