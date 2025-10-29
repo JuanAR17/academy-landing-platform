@@ -43,6 +43,7 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.POST,
             "/api/epayco/payment",   // tarjeta (ya lo tenías)
             "/api/epayco/pse",       // << NUEVO: PSE abierto (JWT opcional)
+            "/api/epayco/payment/pse/confirm",
             "/webhook/epayco"        // << NUEVO: webhook server-to-server desde ePayco
         ).permitAll()
 

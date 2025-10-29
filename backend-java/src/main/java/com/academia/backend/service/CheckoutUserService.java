@@ -5,6 +5,7 @@ import com.academia.backend.domain.EpaycoTransactionEntity;
 import com.academia.backend.domain.RoleEntity;
 import com.academia.backend.dto.PsePaymentOut;
 import com.academia.backend.dto.in.CardPaymentIn;
+import com.academia.backend.dto.in.ConfirmPseIn;
 import com.academia.backend.dto.in.PsePaymentIn;
 import com.academia.backend.repo.UserRepo;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -12,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import com.academia.backend.repo.EpaycoTransactionRepo;
 import com.academia.backend.repo.RoleRepo;
@@ -25,6 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -33,6 +36,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.Optional;
 
 
 
@@ -50,14 +54,22 @@ public class CheckoutUserService {
     private final EpaycoTransactionRepo trxRepo; // si lo tienes
 
 
-    public CheckoutUserService(UserRepo userRepo, RoleRepo roleRepo, PasswordEncoder passwordEncoder, IpResolver ipResolver) {
+    public CheckoutUserService(
+        UserRepo userRepo,
+        RoleRepo roleRepo,
+        PasswordEncoder passwordEncoder,
+        IpResolver ipResolver,
+        EpaycoClient epaycoClient,           // <- nuevo: ya lo estabas usando
+        EpaycoTransactionRepo trxRepo,       // <- nuevo: ya lo estabas usando
+        ObjectMapper om                      // <- opcional: si no lo tienes como @Bean puedes new ObjectMapper()
+    ) {
         this.userRepo = userRepo;
         this.roleRepo = roleRepo;
         this.passwordEncoder = passwordEncoder;
-        this.epaycoClient = null;
         this.ipResolver = ipResolver;
-        this.om = new ObjectMapper();
-        this.trxRepo = null;
+        this.epaycoClient = epaycoClient;     // <--- ya NO queda en null
+        this.trxRepo = trxRepo;               // <--- ya NO queda en null
+        this.om = (om != null) ? om : new ObjectMapper();
     }
 
     /** Devuelve un userId válido: reutiliza por email o crea uno nuevo. */
@@ -287,9 +299,107 @@ public class CheckoutUserService {
         return out;
     }
 
+
+    /** Confirmar estado de una transacción PSE en ePayco y reflejarlo en BD. */
+    public Mono<PsePaymentOut> confirmPse(ConfirmPseIn in, HttpServletRequest req) {
+        Long txId = in.getTransactionID();
+        if (txId == null) {
+        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "transactionID es obligatorio"));
+        }
+
+        return epaycoClient.confirmPseTransaction(txId)
+            .publishOn(Schedulers.boundedElastic())
+            .map(resp -> {
+            boolean ok = resp.path("success").asBoolean(false);
+            if (!ok) {
+                String err = resp.path("textResponse").asText("Fallo al confirmar en ePayco");
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, err);
+            }
+            JsonNode data = resp.path("data");
+
+            // ---- Mapear a nuestro modelo de salida ----
+            PsePaymentOut out = new PsePaymentOut();
+            out.refPayco  = data.path("ref_payco").isMissingNode() ? null : data.path("ref_payco").asLong();
+            out.invoice   = data.path("factura").asText(null);
+            out.status    = data.path("estado").asText(null);
+            out.response  = data.path("respuesta").asText(null);
+            out.receipt   = data.path("recibo").asText(null);
+            out.authorizationOrTxnId = data.path("transactionID").asText(null);
+            out.ticketId  = data.path("ticketId").asText(null);
+            out.redirectUrl = null; // en confirmación ya no hay urlbanco
+            out.txnDate   = parseEpaycoDate(data.path("fecha").asText(null));
+
+            // ---- Persistencia/Actualización en BD (no romper si falla) ----
+            try {
+                EpaycoTransactionEntity e = findExistingTransaction(data)
+                    .orElseGet(EpaycoTransactionEntity::new);
+
+                // Identificadores básicos
+                if (out.refPayco != null) e.setRefPayco(out.refPayco);
+                if (out.invoice != null) e.setInvoice(out.invoice);
+
+                // Valores monetarios (si vienen)
+                e.setAmount(new BigDecimal(data.path("valor").asText("0")));
+                e.setTax(new BigDecimal(data.path("iva").asText("0")));
+                e.setBaseTax(new BigDecimal(data.path("baseiva").asText("0")));
+                e.setCurrency(data.path("moneda").asText(null));
+                e.setIco(BigDecimal.ZERO); // confirm no trae ico
+
+                // Estado y metadatos
+                e.setBank(data.path("banco").asText(null));
+                e.setStatus(out.status);
+                e.setResponse(out.response);
+                e.setReceipt(out.receipt);
+                e.setFranchise(data.path("franquicia").asText(null));
+                e.setCodeResponse(data.path("cod_respuesta").asInt(0));
+                e.setCodeError(null);
+                e.setIp(data.path("ip").asText(null));
+                e.setTestMode(data.path("enpruebas").asInt(0) == 1);
+                e.setTxnDate(out.txnDate);
+
+                // Datos comprador
+                e.setDocType(data.path("tipo_doc").asText(null));
+                e.setDocNumber(data.path("documento").asText(null));
+                e.setFirstNames(data.path("nombres").asText(null));
+                e.setLastNames(data.path("apellidos").asText(null));
+                e.setEmail(data.path("email").asText(null));
+                e.setCity(data.path("ciudad").asText(null));
+                e.setAddress(data.path("direccion").asText(null));
+                e.setCountryIso2(data.path("ind_pais").asText(null));
+
+                // Raw JSON como string
+                e.setRawPayload(resp.toString());
+
+                trxRepo.save(e);
+            } catch (Exception ignore) {
+                // No romper la respuesta al cliente por fallo de auditoría
+            }
+
+            return out;
+            });
+    }
+
+    /** Intentar encontrar la transacción por ref_payco o factura. */
+    private Optional<EpaycoTransactionEntity> findExistingTransaction(JsonNode data) {
+        Long ref = data.path("ref_payco").isMissingNode() ? null : data.path("ref_payco").asLong();
+        String inv = data.path("factura").asText(null);
+
+        if (ref != null) {
+        try { return trxRepo.findByRefPayco(ref); } catch (Exception ignored) {}
+        }
+        if (inv != null && !inv.isBlank()) {
+        try { return trxRepo.findFirstByInvoiceOrderByCreatedAtDesc(inv); } catch (Exception ignored) {}
+        }
+        return Optional.empty();
+    }
+
     private static Instant parseEpaycoDate(String v) {
         if (v == null || v.isBlank()) return null;
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         return LocalDateTime.parse(v, fmt).atZone(ZoneId.systemDefault()).toInstant();
     }
+
+
+
+    
 }

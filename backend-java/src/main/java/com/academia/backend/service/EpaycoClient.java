@@ -217,4 +217,17 @@ public class EpaycoClient {
         .retrieve()
         .bodyToMono(JsonNode.class);
   }
+
+  //--------------------------------------Confirmar Transacción PSE------------------------------
+  /** Confirmar transacción PSE: POST /payment/pse/transaction */
+  public Mono<JsonNode> confirmPseTransaction(Long transactionId) {
+    Map<String, Object> body = Map.of("transactionID", transactionId);
+    return client.post()
+        .uri("/payment/pse/transaction")
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(body)
+        .retrieve()
+        .bodyToMono(JsonNode.class);
+  }
+
 }
