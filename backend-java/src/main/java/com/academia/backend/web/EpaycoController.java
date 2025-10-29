@@ -2,6 +2,7 @@ package com.academia.backend.web;
 
 import com.academia.backend.dto.PsePaymentOut;
 import com.academia.backend.dto.in.CardPaymentIn;
+import com.academia.backend.dto.in.ConfirmPseIn;
 import com.academia.backend.dto.in.PsePaymentIn;
 import com.academia.backend.service.EpaycoAuthService;
 import com.academia.backend.service.EpaycoClient;
@@ -36,6 +37,12 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
+
+
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
+
+
 
 @RestController
 @RequestMapping("/api/epayco")
@@ -357,5 +364,54 @@ public class EpaycoController {
       return checkoutUserService
           .payWithPse(in, req)   // tu servicio se encarga de: resolver IP, llamar client, persistir y armar PsePaymentOut
           .map(ResponseEntity::ok);
+    }
+
+
+    //--------------------PSE confirmation------------------------
+    @PostMapping("/payment/pse/confirm")
+    @Operation(
+        summary = "Confirmar transacción PSE",
+        description = """
+            Confirma en ePayco el estado de una transacción PSE usando el `transactionID` que el banco devuelve.
+            Internamente llamamos a `POST {{url_apify}}/payment/pse/transaction` (el Bearer se inyecta por WebClient).
+            Actualiza/crea el registro en BD y retorna un resumen normalizado (PsePaymentOut).
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Transacción confirmada",
+            content = @Content(mediaType = "application/json",
+                examples = @ExampleObject(name = "Ejemplo OK", value = """
+                    {
+                        "redirectUrl": null,
+                        "refPayco": 26291500,
+                        "invoice": "QR-APIFY-PSE1596836491",
+                        "status": "Pendiente",
+                        "response": "Por favor verificar si el débito fue realizado en el Banco.",
+                        "receipt": "48771596836492",
+                        "authorizationOrTxnId": "705885651",
+                        "ticketId": "48771596836492",
+                        "txnDate": "2020-08-07T21:41:32Z",
+                        "lookupToken": null
+                    }
+                """))),
+        @ApiResponse(responseCode = "400", description = "Entrada inválida"),
+        @ApiResponse(responseCode = "502", description = "Fallo en ePayco al confirmar")
+    })
+    @RequestBody(
+        required = true,
+        content = @Content(mediaType = "application/json", examples = @ExampleObject(
+            name = "Input mínimo",
+            value = """
+                { "transactionID": 751212089 }
+            """
+        ))
+    )
+    public Mono<ResponseEntity<PsePaymentOut>> confirmPse(
+        @Valid @org.springframework.web.bind.annotation.RequestBody ConfirmPseIn in,
+        HttpServletRequest req
+    ) {
+        return checkoutUserService
+            .confirmPse(in, req)
+            .map(ResponseEntity::ok);
     }
 }
