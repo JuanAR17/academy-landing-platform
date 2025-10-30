@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
-import { DebitCreditCardPayment, EpaycoToken } from '../../shared/interfaces/payment';
-import { DocumentTypes } from '../../shared/interfaces/users';
+import { CardPaymentRespose, DebitCreditCardPayment } from '../../shared/interfaces/payment';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +11,7 @@ export class EpaycoService {
   private baseUrl = `${environment.apiUrl}/epayco`
 
   paymentCard(data: DebitCreditCardPayment) {
-    return this.http.post<any>(`${this.baseUrl}/payment`, data)
+    return this.http.post<CardPaymentRespose>(`${this.baseUrl}/payment`, data)
   }
 
   generatePaymentUrl() {

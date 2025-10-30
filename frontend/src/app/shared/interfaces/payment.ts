@@ -1,18 +1,46 @@
 export interface DebitCreditCardPayment{
+  value: string,
   docType: string,
-  docNumber: number,
+  docNumber: string,
   name: string,
   lastName: string,
   email: string,
-  cellphone: number,
-  cardNumber: number,
-  cardExpYear: number,
-  cardExpMonth: number,
-  cardCvv: number,
-  titularName: string,
-  dues: number,
-  value: number,
-  _cardTokenId: string,
+  cellPhone: string,
+  phone: string,
+  address: string,
+  country: string,
+  city: string,
+  currency: string,
+  cardNumber: string,
+  cardExpYear: string,
+  cardExpMonth: string,
+  cardCvc: string,
+  dues: string,
+  testMode: boolean,
+  ip: string
+}
+
+export interface CardPaymentRespose{
+  success: boolean,
+  titleResponse: string,
+  data: {
+    transaction: {
+      status: boolean,
+      object: string,
+      data: {
+        ref_payco: number,
+        factura: string,
+        valor: number,
+        estado: string,
+        respuesta: string,
+        recibo: string
+      }
+    },
+    tokenCard: {
+      email: string,
+      cardTokenId: string
+    }
+  }
 }
 
 export interface PsePayment{
